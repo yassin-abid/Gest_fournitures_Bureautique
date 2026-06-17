@@ -92,7 +92,7 @@ export const App: React.FC = () => {
         <Route
           path="/catalog/articles"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock', 'responsable_achats']}>
               <ArticlesPage />
             </ProtectedRoute>
           }
@@ -100,7 +100,7 @@ export const App: React.FC = () => {
         <Route
           path="/catalog/categories"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock', 'responsable_achats']}>
               <CategoriesPage />
             </ProtectedRoute>
           }
@@ -108,7 +108,7 @@ export const App: React.FC = () => {
         <Route
           path="/catalog/suppliers"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock', 'responsable_achats']}>
               <SuppliersPage />
             </ProtectedRoute>
           }
@@ -118,7 +118,7 @@ export const App: React.FC = () => {
         <Route
           path="/stock/status"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock']}>
               <StockStatusPage />
             </ProtectedRoute>
           }
@@ -126,7 +126,7 @@ export const App: React.FC = () => {
         <Route
           path="/stock/movements"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock']}>
               <StockMovementsPage />
             </ProtectedRoute>
           }
@@ -134,7 +134,7 @@ export const App: React.FC = () => {
         <Route
           path="/stock/alerts"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'gestionnaire_stock']}>
               <StockAlertsPage />
             </ProtectedRoute>
           }
@@ -170,7 +170,7 @@ export const App: React.FC = () => {
         <Route
           path="/orders"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'responsable_achats']}>
               <OrdersListPage />
             </ProtectedRoute>
           }
@@ -186,7 +186,7 @@ export const App: React.FC = () => {
         <Route
           path="/orders/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRole={['admin', 'responsable_achats']}>
               <OrderDetailsPage />
             </ProtectedRoute>
           }
