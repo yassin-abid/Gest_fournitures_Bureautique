@@ -36,103 +36,65 @@ export const RolesPermissionsPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const mockRoles: Role[] = [
-    {
-      id: 'role-001',
-      name: 'Admin',
-      description: 'Full system access',
-      userCount: 2,
-      status: 'active',
-      permissions: [
-        {
-          id: 'perm-001',
-          name: 'View All Articles',
-          resource: 'articles',
-          action: 'read',
-        },
-        {
-          id: 'perm-002',
-          name: 'Create Articles',
-          resource: 'articles',
-          action: 'create',
-        },
-        {
-          id: 'perm-003',
-          name: 'Manage Users',
-          resource: 'users',
-          action: 'manage',
-        },
-        {
-          id: 'perm-004',
-          name: 'Manage Roles',
-          resource: 'roles',
-          action: 'manage',
-        },
-      ],
-    },
-    {
-      id: 'role-002',
-      name: 'Manager',
-      description: 'Can approve requests and create orders',
-      userCount: 4,
-      status: 'active',
-      permissions: [
-        {
-          id: 'perm-005',
-          name: 'View All Articles',
-          resource: 'articles',
-          action: 'read',
-        },
-        {
-          id: 'perm-006',
-          name: 'Approve Requests',
-          resource: 'requests',
-          action: 'approve',
-        },
-        {
-          id: 'perm-007',
-          name: 'Create Orders',
-          resource: 'orders',
-          action: 'create',
-        },
-      ],
-    },
-    {
-      id: 'role-003',
-      name: 'User',
-      description: 'Basic user access',
-      userCount: 18,
-      status: 'active',
-      permissions: [
-        {
-          id: 'perm-008',
-          name: 'View Articles',
-          resource: 'articles',
-          action: 'read',
-        },
-        {
-          id: 'perm-009',
-          name: 'Create Requests',
-          resource: 'requests',
-          action: 'create',
-        },
-      ],
-    },
+  const allPermissions: Permission[] = [
+    { id: 'perm-app-1', name: 'Vue Tableau de Bord', resource: 'app', action: 'view' },
+    { id: 'perm-art-1', name: 'Consulter Articles', resource: 'articles', action: 'read' },
+    { id: 'perm-art-2', name: 'Gérer Articles', resource: 'articles', action: 'manage' },
+    { id: 'perm-req-1', name: 'Consulter Demandes', resource: 'requests', action: 'read' },
+    { id: 'perm-req-2', name: 'Créer Demandes', resource: 'requests', action: 'create' },
+    { id: 'perm-req-3', name: 'Approuver Demandes', resource: 'requests', action: 'approve' },
+    { id: 'perm-ord-1', name: 'Consulter Commandes', resource: 'orders', action: 'read' },
+    { id: 'perm-ord-2', name: 'Gérer Commandes', resource: 'orders', action: 'manage' },
+    { id: 'perm-stk-1', name: 'Consulter Stock', resource: 'stock', action: 'read' },
+    { id: 'perm-stk-2', name: 'Gérer Stock', resource: 'stock', action: 'manage' },
+    { id: 'perm-rep-1', name: 'Consulter Rapports', resource: 'reports', action: 'read' },
+    { id: 'perm-usr-1', name: 'Gérer Utilisateurs', resource: 'users', action: 'manage' },
+    { id: 'perm-rol-1', name: 'Gérer Rôles', resource: 'roles', action: 'manage' },
+    { id: 'perm-set-1', name: 'Gérer Paramètres', resource: 'settings', action: 'manage' },
+    { id: 'perm-log-1', name: 'Consulter Logs', resource: 'logs', action: 'read' },
   ];
 
-  const allPermissions: Permission[] = [
-    { id: 'perm-001', name: 'View Articles', resource: 'articles', action: 'read' },
-    { id: 'perm-002', name: 'Create Articles', resource: 'articles', action: 'create' },
-    { id: 'perm-003', name: 'Edit Articles', resource: 'articles', action: 'edit' },
-    { id: 'perm-004', name: 'Delete Articles', resource: 'articles', action: 'delete' },
-    { id: 'perm-005', name: 'View Requests', resource: 'requests', action: 'read' },
-    { id: 'perm-006', name: 'Create Requests', resource: 'requests', action: 'create' },
-    { id: 'perm-007', name: 'Approve Requests', resource: 'requests', action: 'approve' },
-    { id: 'perm-008', name: 'View Orders', resource: 'orders', action: 'read' },
-    { id: 'perm-009', name: 'Create Orders', resource: 'orders', action: 'create' },
-    { id: 'perm-010', name: 'View Reports', resource: 'reports', action: 'read' },
-    { id: 'perm-011', name: 'Manage Users', resource: 'users', action: 'manage' },
-    { id: 'perm-012', name: 'Manage Roles', resource: 'roles', action: 'manage' },
+  const mockRoles: Role[] = [
+    {
+      id: 'role-admin',
+      name: 'Administrateur',
+      description: 'Contrôle total sur l\'ensemble du système',
+      userCount: 2,
+      status: 'active',
+      permissions: [...allPermissions],
+    },
+    {
+      id: 'role-resp-service',
+      name: 'Responsable de Service',
+      description: 'Valide les demandes de son équipe',
+      userCount: 6,
+      status: 'active',
+      permissions: allPermissions.filter(p => ['perm-app-1', 'perm-art-1', 'perm-req-1', 'perm-req-2', 'perm-req-3'].includes(p.id)),
+    },
+    {
+      id: 'role-gest-stock',
+      name: 'Gestionnaire de Stock',
+      description: 'Gère l\'inventaire et les mouvements de stock',
+      userCount: 3,
+      status: 'active',
+      permissions: allPermissions.filter(p => ['perm-app-1', 'perm-art-1', 'perm-art-2', 'perm-req-1', 'perm-stk-1', 'perm-stk-2', 'perm-rep-1'].includes(p.id)),
+    },
+    {
+      id: 'role-resp-achats',
+      name: 'Responsable Achats',
+      description: 'Passe les commandes auprès des fournisseurs',
+      userCount: 2,
+      status: 'active',
+      permissions: allPermissions.filter(p => ['perm-app-1', 'perm-art-1', 'perm-req-1', 'perm-ord-1', 'perm-ord-2', 'perm-rep-1'].includes(p.id)),
+    },
+    {
+      id: 'role-employe',
+      name: 'Employé',
+      description: 'Soumet et suit ses propres demandes de fournitures',
+      userCount: 42,
+      status: 'active',
+      permissions: allPermissions.filter(p => ['perm-app-1', 'perm-art-1', 'perm-req-1', 'perm-req-2'].includes(p.id)),
+    },
   ];
 
   return (
