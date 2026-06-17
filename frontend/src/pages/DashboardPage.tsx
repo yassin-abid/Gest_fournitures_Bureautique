@@ -1,5 +1,8 @@
 /**
  * Dashboard Page
+ * Renders a role-specific view:
+ *   - gestionnaire_stock → Advanced Stock Analytics Dashboard
+ *   - all others         → Generic KPI Dashboard
  */
 
 import React, { useState, useEffect } from 'react';
@@ -8,13 +11,366 @@ import { Loader } from '../components/Loader';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
+/* ─────────────────────────────────────────────────────────────
+   Advanced Stock Dashboard — visible to Gestionnaire de Stock
+───────────────────────────────────────────────────────────── */
+const GestionnaireStockDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const stockData = [
+    { name: 'Papier A4 (500 feuilles)', current: 450, min: 100, max: 500, status: 'normal' },
+    { name: 'Stylo Bille (Bleu)', current: 75, min: 50, max: 200, status: 'normal' },
+    { name: 'Chemise Classeur (Jaune)', current: 45, min: 80, max: 300, status: 'low' },
+    { name: 'Agrafeuse de Bureau', current: 8, min: 5, max: 30, status: 'critical' },
+    { name: 'Ruban Adhésif (12mm)', current: 520, min: 100, max: 500, status: 'excess' },
+    { name: 'Colle en Bâton', current: 65, min: 80, max: 250, status: 'low' },
+    { name: 'Toner Laser HP 85A', current: 2, min: 10, max: 40, status: 'critical' },
+  ];
+
+  const consumptionData = [
+    { month: 'Jan', papeterie: 35, informatique: 20, bureautique: 15 },
+    { month: 'Fév', papeterie: 42, informatique: 28, bureautique: 18 },
+    { month: 'Mar', papeterie: 28, informatique: 15, bureautique: 22 },
+    { month: 'Avr', papeterie: 55, informatique: 35, bureautique: 30 },
+    { month: 'Mai', papeterie: 70, informatique: 48, bureautique: 35 },
+    { month: 'Jun', papeterie: 52, informatique: 32, bureautique: 28 },
+  ];
+
+  const maxConsumption = Math.max(
+    ...consumptionData.map((d) => d.papeterie + d.informatique + d.bureautique)
+  );
+
+  const criticalItems = stockData.filter((s) => s.status === 'critical');
+  const lowItems = stockData.filter((s) => s.status === 'low');
+  const normalItems = stockData.filter((s) => s.status === 'normal');
+  const excessItems = stockData.filter((s) => s.status === 'excess');
+
+  const barColor = (status: string) => {
+    if (status === 'critical') return 'bg-red-500';
+    if (status === 'low') return 'bg-amber-500';
+    if (status === 'excess') return 'bg-blue-400';
+    return 'bg-emerald-500';
+  };
+
+  const statusLabel = (status: string) => {
+    if (status === 'critical') return '🚨 CRITIQUE';
+    if (status === 'low') return '⚠️ BAS';
+    if (status === 'excess') return 'ℹ️ EXCÉDENT';
+    return '✅ NORMAL';
+  };
+
+  const statusTextColor = (status: string) => {
+    if (status === 'critical') return 'text-red-600';
+    if (status === 'low') return 'text-amber-600';
+    if (status === 'excess') return 'text-blue-600';
+    return 'text-emerald-600';
+  };
+
+  const recentMovements = [
+    { icon: 'arrow_upward', color: 'text-emerald-600 bg-emerald-50', article: 'Papier A4 (500 feuilles)', qty: '+100', ref: 'ORD-001', time: "Aujourd'hui 14:30" },
+    { icon: 'arrow_downward', color: 'text-amber-600 bg-amber-50', article: 'Stylo Bille (Bleu)', qty: '-25', ref: 'REQ-001', time: "Aujourd'hui 11:15" },
+    { icon: 'build', color: 'text-blue-600 bg-blue-50', article: 'Chemise Classeur', qty: '-5', ref: 'INV-001', time: 'Hier 16:45' },
+    { icon: 'arrow_upward', color: 'text-emerald-600 bg-emerald-50', article: 'Agrafeuse de Bureau', qty: '+10', ref: 'ORD-002', time: 'Hier 10:20' },
+  ];
+
+  return (
+    <MainLayout>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>inventory</span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Tableau de Bord — Gestion de Stock</h2>
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant">Vue analytique avancée : niveaux, consommation, alertes et tendances en temps réel.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate('/stock/movements')}
+            className="px-4 py-2 font-button text-sm font-semibold text-on-surface border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-sm">history</span>
+            Mouvements
+          </button>
+          <button
+            onClick={() => navigate('/requests/create')}
+            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
+          >
+            <span className="material-symbols-outlined text-sm">add</span>
+            Nouvelle Demande
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Total Articles</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span>
+          </div>
+          <h3 className="text-4xl font-bold text-on-surface">{stockData.length}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">{normalItems.length} en stock normal</p>
+        </div>
+
+        <div className="bg-surface border border-red-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-red-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">Critiques</p>
+            <span className="material-symbols-outlined text-red-600 bg-red-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+          </div>
+          <h3 className="text-4xl font-bold text-red-700">{criticalItems.length}</h3>
+          <p className="text-xs text-red-500 mt-1 font-medium">Action immédiate requise</p>
+        </div>
+
+        <div className="bg-surface border border-amber-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Stock Bas</p>
+            <span className="material-symbols-outlined text-amber-600 bg-amber-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>trending_down</span>
+          </div>
+          <h3 className="text-4xl font-bold text-amber-700">{lowItems.length}</h3>
+          <p className="text-xs text-amber-600 mt-1">Réapprovisionnement conseillé</p>
+        </div>
+
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-secondary/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Mouvements / Mois</p>
+            <span className="material-symbols-outlined text-secondary bg-secondary/10 p-1.5 rounded-lg text-[18px]">swap_vert</span>
+          </div>
+          <h3 className="text-4xl font-bold text-on-surface">47</h3>
+          <div className="mt-2 flex items-center gap-1">
+            <span className="flex items-center text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-xs font-semibold">
+              <span className="material-symbols-outlined text-[12px] mr-0.5">trending_up</span> +8%
+            </span>
+            <span className="text-xs text-on-surface-variant">vs mois dernier</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Critical Alert Banner */}
+      {criticalItems.length > 0 && (
+        <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-300 rounded-xl text-red-700 font-medium mt-gutter">
+          <span className="material-symbols-outlined text-red-600 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
+          <span className="flex-1">
+            🚨 <strong>{criticalItems.length} article(s) en rupture critique :</strong> {criticalItems.map((i) => i.name).join(' · ')}
+          </span>
+          <button
+            onClick={() => navigate('/stock/status')}
+            className="text-sm font-bold underline hover:no-underline whitespace-nowrap"
+          >
+            Gérer →
+          </button>
+        </div>
+      )}
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-gutter">
+        {/* Stacked Bar Chart: Consumption by Category */}
+        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl p-6 soft-shadow flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-xl font-semibold text-on-surface">Consommation par Catégorie</h3>
+              <p className="text-sm text-on-surface-variant mt-0.5">Tendances de consommation mensuelle (unités sorties)</p>
+            </div>
+            <div className="flex gap-3 text-xs flex-wrap justify-end">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-secondary inline-block" />Papeterie</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />Informatique</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />Bureautique</span>
+            </div>
+          </div>
+          <div className="flex-1 flex items-end gap-3 h-[200px] pb-5 border-b border-outline-variant/30">
+            {consumptionData.map((d) => {
+              const total = d.papeterie + d.informatique + d.bureautique;
+              const h1 = (d.papeterie / maxConsumption) * 100;
+              const h2 = (d.informatique / maxConsumption) * 100;
+              const h3 = (d.bureautique / maxConsumption) * 100;
+              return (
+                <div key={d.month} className="flex-1 flex flex-col justify-end gap-0 h-full group cursor-pointer">
+                  <div className="relative w-full mt-auto" style={{ height: `${h1 + h2 + h3}%` }}>
+                    {/* stacked bars */}
+                    <div className="absolute bottom-0 left-0 right-0 flex flex-col-reverse">
+                      <div className="w-full bg-secondary rounded-t-0" style={{ height: `${(h1 / (h1 + h2 + h3)) * 100}%`, minHeight: '4px' }} />
+                      <div className="w-full bg-emerald-500" style={{ height: `${(h2 / (h1 + h2 + h3)) * 100}%`, minHeight: '4px' }} />
+                      <div className="w-full bg-amber-400 rounded-t-sm" style={{ height: `${(h3 / (h1 + h2 + h3)) * 100}%`, minHeight: '4px' }} />
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-[10px] py-1 px-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      Total: {total}
+                    </div>
+                  </div>
+                  <span className="text-center text-[11px] text-on-surface-variant font-semibold mt-2">{d.month}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Donut Chart: Stock by Status */}
+        <div className="bg-surface border border-outline-variant rounded-xl p-6 soft-shadow flex flex-col">
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-on-surface">Répartition du Stock</h3>
+            <p className="text-sm text-on-surface-variant mt-0.5">Par statut actuel</p>
+          </div>
+          <div className="flex items-center justify-center my-4">
+            <div className="relative w-40 h-40">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" fill="none" r="40" stroke="#e5e7eb" strokeWidth="14" />
+                {/* Critical */}
+                <circle cx="50" cy="50" fill="none" r="40" stroke="#ef4444" strokeWidth="14"
+                  strokeDasharray={`${(criticalItems.length / stockData.length) * 251} 251`}
+                  strokeDashoffset="0" />
+                {/* Low */}
+                <circle cx="50" cy="50" fill="none" r="40" stroke="#f59e0b" strokeWidth="14"
+                  strokeDasharray={`${(lowItems.length / stockData.length) * 251} 251`}
+                  strokeDashoffset={`-${(criticalItems.length / stockData.length) * 251}`} />
+                {/* Normal */}
+                <circle cx="50" cy="50" fill="none" r="40" stroke="#10b981" strokeWidth="14"
+                  strokeDasharray={`${(normalItems.length / stockData.length) * 251} 251`}
+                  strokeDashoffset={`-${((criticalItems.length + lowItems.length) / stockData.length) * 251}`} />
+                {/* Excess */}
+                <circle cx="50" cy="50" fill="none" r="40" stroke="#60a5fa" strokeWidth="14"
+                  strokeDasharray={`${(excessItems.length / stockData.length) * 251} 251`}
+                  strokeDashoffset={`-${((criticalItems.length + lowItems.length + normalItems.length) / stockData.length) * 251}`} />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-on-surface">{stockData.length}</span>
+                <span className="text-[10px] text-on-surface-variant font-medium">Articles</span>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2.5 mt-2">
+            {[
+              { label: 'Critique', count: criticalItems.length, color: 'bg-red-500' },
+              { label: 'Stock Bas', count: lowItems.length, color: 'bg-amber-500' },
+              { label: 'Normal', count: normalItems.length, color: 'bg-emerald-500' },
+              { label: 'Excédentaire', count: excessItems.length, color: 'bg-blue-400' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${item.color}`} />
+                  <span className="text-on-surface">{item.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${item.color}`} style={{ width: `${(item.count / stockData.length) * 100}%` }} />
+                  </div>
+                  <span className="font-bold text-on-surface w-4 text-right">{item.count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter mt-gutter">
+        {/* Stock Level Progress Bars */}
+        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Seuils d'Alerte — Détail</h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">Niveaux de stock actuels vs seuils</p>
+            </div>
+            <button
+              onClick={() => navigate('/stock/status')}
+              className="text-secondary text-sm font-semibold hover:underline"
+            >
+              Gérer tout →
+            </button>
+          </div>
+          <div className="p-5 space-y-4">
+            {stockData.map((item) => {
+              const pct = Math.min(100, (item.current / item.max) * 100);
+              return (
+                <div key={item.name}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium text-on-surface truncate mr-2">{item.name}</span>
+                    <span className="text-sm text-on-surface-variant shrink-0">{item.current} / {item.max}</span>
+                  </div>
+                  <div className="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${barColor(item.status)}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-on-surface-variant mt-0.5">
+                    <span>Min: {item.min}</span>
+                    <span className={`font-bold ${statusTextColor(item.status)}`}>{statusLabel(item.status)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Quick Actions + Recent Movements */}
+        <div className="flex flex-col gap-gutter">
+          {/* Quick Actions */}
+          <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-5">
+            <h3 className="text-lg font-semibold text-on-surface mb-4">Actions Rapides</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: 'add_box', color: 'text-secondary', hoverBorder: 'hover:border-secondary hover:bg-secondary/5', label: 'Enregistrer Entrée', path: '/stock/movements' },
+                { icon: 'report_problem', color: 'text-red-500', hoverBorder: 'hover:border-red-400 hover:bg-red-50', label: 'Signaler Anomalie', path: '/stock/movements' },
+                { icon: 'tune', color: 'text-amber-500', hoverBorder: 'hover:border-amber-400 hover:bg-amber-50', label: 'Ajuster Stock', path: '/stock/status' },
+                { icon: 'description', color: 'text-emerald-500', hoverBorder: 'hover:border-emerald-400 hover:bg-emerald-50', label: 'Générer Rapport', path: '/reports' },
+              ].map((a) => (
+                <button
+                  key={a.label}
+                  onClick={() => navigate(a.path)}
+                  className={`flex flex-col items-center gap-2 p-4 bg-surface rounded-xl border border-outline-variant ${a.hoverBorder} transition-all group`}
+                >
+                  <span
+                    className={`material-symbols-outlined text-[28px] ${a.color} group-hover:scale-110 transition-transform`}
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    {a.icon}
+                  </span>
+                  <span className="text-xs font-semibold text-on-surface text-center">{a.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Movements */}
+          <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex-1">
+            <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+              <h3 className="text-lg font-semibold text-on-surface">Derniers Mouvements</h3>
+              <button onClick={() => navigate('/stock/movements')} className="text-secondary text-sm font-semibold hover:underline">
+                Voir tout →
+              </button>
+            </div>
+            <div className="divide-y divide-outline-variant/30">
+              {recentMovements.map((m, i) => (
+                <div key={i} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-container-low/50 transition-colors">
+                  <span className={`material-symbols-outlined text-[18px] p-1.5 rounded-lg ${m.color}`}>{m.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-on-surface truncate">{m.article}</p>
+                    <p className="text-xs text-on-surface-variant">{m.ref} · {m.time}</p>
+                  </div>
+                  <span className={`text-sm font-bold shrink-0 ${m.qty.startsWith('+') ? 'text-emerald-600' : 'text-red-600'}`}>{m.qty}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Generic Dashboard (Admin, Employé, Responsable Service, etc.)
+───────────────────────────────────────────────────────────── */
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading data
     setTimeout(() => setIsLoading(false), 500);
   }, []);
 
@@ -24,6 +380,11 @@ export const DashboardPage: React.FC = () => {
         <Loader fullScreen />
       </MainLayout>
     );
+  }
+
+  // ── Role-specific dashboard ──
+  if (user?.role === 'gestionnaire_stock') {
+    return <GestionnaireStockDashboard />;
   }
 
   return (
@@ -40,7 +401,7 @@ export const DashboardPage: React.FC = () => {
             Exporter le rapport
           </button>
           {user?.role !== 'responsable_achats' && (
-            <button 
+            <button
               className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
               onClick={() => navigate('/requests/create')}
             >
@@ -137,43 +498,26 @@ export const DashboardPage: React.FC = () => {
             </select>
           </div>
           <div className="flex-1 relative w-full h-full bg-surface-container-low/50 rounded-lg border border-outline-variant/50 overflow-hidden flex items-end px-4 pb-4 gap-4">
-            {/* Simulated Line Chart via Bars for layout */}
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-primary-fixed rounded-t-sm h-[30%] group-hover:bg-secondary transition-colors relative mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">12k</div>
+            {[
+              { label: 'Jan', h: '30', val: '12k' },
+              { label: 'Fév', h: '45', val: '18k' },
+              { label: 'Mar', h: '25', val: '10k' },
+              { label: 'Avr', h: '60', val: '24k' },
+              { label: 'Mai', h: '80', val: '32k', active: true },
+              { label: 'Jun', h: '50', val: '20k' },
+            ].map((bar) => (
+              <div key={bar.label} className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
+                <div
+                  className={`w-full ${bar.active ? 'bg-secondary shadow-[0_0_15px_rgba(49,107,243,0.3)]' : 'bg-primary-fixed group-hover:bg-secondary transition-colors'} rounded-t-sm relative mt-auto`}
+                  style={{ height: `${bar.h}%` }}
+                >
+                  <div className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded ${bar.active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    {bar.val}
+                  </div>
+                </div>
+                <span className={`text-center text-xs font-semibold ${bar.active ? 'text-on-surface' : 'text-on-surface-variant'}`}>{bar.label}</span>
               </div>
-              <span className="text-center text-xs text-on-surface-variant font-semibold">Jan</span>
-            </div>
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-primary-fixed rounded-t-sm h-[45%] group-hover:bg-secondary transition-colors relative mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">18k</div>
-              </div>
-              <span className="text-center text-xs text-on-surface-variant font-semibold">Fév</span>
-            </div>
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-primary-fixed rounded-t-sm h-[25%] group-hover:bg-secondary transition-colors relative mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">10k</div>
-              </div>
-              <span className="text-center text-xs text-on-surface-variant font-semibold">Mar</span>
-            </div>
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-primary-fixed rounded-t-sm h-[60%] group-hover:bg-secondary transition-colors relative mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">24k</div>
-              </div>
-              <span className="text-center text-xs text-on-surface-variant font-semibold">Avr</span>
-            </div>
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-secondary rounded-t-sm h-[80%] relative shadow-[0_0_15px_rgba(49,107,243,0.3)] mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded">32k</div>
-              </div>
-              <span className="text-center text-xs text-on-surface font-bold">Mai</span>
-            </div>
-            <div className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-              <div className="w-full bg-primary-fixed rounded-t-sm h-[50%] group-hover:bg-secondary transition-colors relative mt-auto">
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">20k</div>
-              </div>
-              <span className="text-center text-xs text-on-surface-variant font-semibold">Juin</span>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -198,18 +542,12 @@ export const DashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-secondary"></span><span className="text-on-surface">Dpt. Info</span></div>
-              <span className="font-semibold">38%</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-primary-fixed"></span><span className="text-on-surface">RH</span></div>
-              <span className="font-semibold">26%</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-tertiary-fixed-dim"></span><span className="text-on-surface">Opérations</span></div>
-              <span className="font-semibold">15%</span>
-            </div>
+            {[['bg-secondary', 'Dpt. Info', '38%'], ['bg-primary-fixed', 'RH', '26%'], ['bg-tertiary-fixed-dim', 'Opérations', '15%']].map(([color, label, pct]) => (
+              <div key={label} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2"><span className={`w-3 h-3 rounded-full ${color}`}></span><span className="text-on-surface">{label}</span></div>
+                <span className="font-semibold">{pct}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -233,58 +571,26 @@ export const DashboardPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-outline-variant/30">
-                <tr className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer">
-                  <td className="py-4 px-6">
-                    <div className="font-medium text-on-surface">REQ-1042</div>
-                    <div className="text-on-surface-variant text-xs mt-0.5">Ordinateurs Dell XPS 15 (x3)</div>
-                  </td>
-                  <td className="py-4 px-6 text-on-surface">Sarah Connor <span className="text-on-surface-variant text-xs block">Dpt. Info</span></td>
-                  <td className="py-4 px-6 text-on-surface-variant">Aujourd'hui, 10:45</td>
-                  <td className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span> En traitement
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer">
-                  <td className="py-4 px-6">
-                    <div className="font-medium text-on-surface">REQ-1041</div>
-                    <div className="text-on-surface-variant text-xs mt-0.5">Papier A4 (x50 boîtes)</div>
-                  </td>
-                  <td className="py-4 px-6 text-on-surface">John Smith <span className="text-on-surface-variant text-xs block">Opérations</span></td>
-                  <td className="py-4 px-6 text-on-surface-variant">Hier, 14:20</td>
-                  <td className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-tertiary-fixed-dim/20 text-on-tertiary-fixed-variant border border-tertiary-fixed-dim/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-on-tertiary-fixed-variant"></span> Approuvé
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer">
-                  <td className="py-4 px-6">
-                    <div className="font-medium text-on-surface">REQ-1040</div>
-                    <div className="text-on-surface-variant text-xs mt-0.5">Chaises ergonomiques (x12)</div>
-                  </td>
-                  <td className="py-4 px-6 text-on-surface">Emma Davis <span className="text-on-surface-variant text-xs block">RH</span></td>
-                  <td className="py-4 px-6 text-on-surface-variant">24 Oct, 2023</td>
-                  <td className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container-highest text-on-surface-variant border border-outline-variant/50">
-                      <span className="w-1.5 h-1.5 rounded-full bg-outline"></span> Livré
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer">
-                  <td className="py-4 px-6">
-                    <div className="font-medium text-on-surface">ORD-5092</div>
-                    <div className="text-on-surface-variant text-xs mt-0.5">Réapprovisionnement: Cartouches Toner</div>
-                  </td>
-                  <td className="py-4 px-6 text-on-surface">Auto Système <span className="text-on-surface-variant text-xs block">Achats</span></td>
-                  <td className="py-4 px-6 text-on-surface-variant">23 Oct, 2023</td>
-                  <td className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-error/10 text-error border border-error/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-error"></span> Retardé
-                    </span>
-                  </td>
-                </tr>
+                {[
+                  { id: 'REQ-1042', article: 'Ordinateurs Dell XPS 15 (x3)', who: 'Sarah Connor', dept: 'Dpt. Info', date: "Aujourd'hui, 10:45", statusClass: 'bg-secondary/10 text-secondary border-secondary/20', dot: 'bg-secondary', label: 'En traitement' },
+                  { id: 'REQ-1041', article: 'Papier A4 (x50 boîtes)', who: 'John Smith', dept: 'Opérations', date: 'Hier, 14:20', statusClass: 'bg-tertiary-fixed-dim/20 text-on-tertiary-fixed-variant border-tertiary-fixed-dim/30', dot: 'bg-on-tertiary-fixed-variant', label: 'Approuvé' },
+                  { id: 'REQ-1040', article: 'Chaises ergonomiques (x12)', who: 'Emma Davis', dept: 'RH', date: '24 Oct, 2023', statusClass: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/50', dot: 'bg-outline', label: 'Livré' },
+                  { id: 'ORD-5092', article: 'Réapprovisionnement: Cartouches Toner', who: 'Auto Système', dept: 'Achats', date: '23 Oct, 2023', statusClass: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Retardé' },
+                ].map((row) => (
+                  <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors cursor-pointer">
+                    <td className="py-4 px-6">
+                      <div className="font-medium text-on-surface">{row.id}</div>
+                      <div className="text-on-surface-variant text-xs mt-0.5">{row.article}</div>
+                    </td>
+                    <td className="py-4 px-6 text-on-surface">{row.who} <span className="text-on-surface-variant text-xs block">{row.dept}</span></td>
+                    <td className="py-4 px-6 text-on-surface-variant">{row.date}</td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${row.statusClass}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${row.dot}`}></span> {row.label}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -298,36 +604,22 @@ export const DashboardPage: React.FC = () => {
             <h3 className="font-headline-md text-[24px] font-semibold text-on-surface">Rupture de stock critique</h3>
           </div>
           <div className="p-4 flex-1 flex flex-col gap-3">
-            <div className="p-3 rounded-lg border border-error/10 bg-error/5 hover:bg-error/10 transition-colors flex items-center justify-between cursor-pointer">
-              <div>
-                <h4 className="font-medium text-on-surface text-sm">Toner Laser HP Noir 85A</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5">SKU: TNR-85A-BLK</p>
+            {[
+              { name: 'Toner Laser HP Noir 85A', sku: 'TNR-85A-BLK', qty: 2, unit: 'restants', min: 10 },
+              { name: 'Marqueurs effaçables (Pack 4)', sku: 'MRK-EX-4PK', qty: 5, unit: 'restants', min: 20 },
+              { name: 'Grains de café (1kg, Arabica)', sku: 'CF-ARB-1KG', qty: 1, unit: 'restant', min: 5 },
+            ].map((item) => (
+              <div key={item.sku} className="p-3 rounded-lg border border-error/10 bg-error/5 hover:bg-error/10 transition-colors flex items-center justify-between cursor-pointer">
+                <div>
+                  <h4 className="font-medium text-on-surface text-sm">{item.name}</h4>
+                  <p className="text-xs text-on-surface-variant mt-0.5">SKU: {item.sku}</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-error font-bold text-lg">{item.qty} <span className="text-xs font-normal">{item.unit}</span></div>
+                  <div className="text-xs text-on-surface-variant">Min : {item.min}</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-error font-bold text-lg">2 <span className="text-xs font-normal">restants</span></div>
-                <div className="text-xs text-on-surface-variant">Min : 10</div>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg border border-error/10 bg-error/5 hover:bg-error/10 transition-colors flex items-center justify-between cursor-pointer">
-              <div>
-                <h4 className="font-medium text-on-surface text-sm">Marqueurs effaçables (Pack 4)</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5">SKU: MRK-EX-4PK</p>
-              </div>
-              <div className="text-right">
-                <div className="text-error font-bold text-lg">5 <span className="text-xs font-normal">restants</span></div>
-                <div className="text-xs text-on-surface-variant">Min : 20</div>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg border border-error/10 bg-error/5 hover:bg-error/10 transition-colors flex items-center justify-between cursor-pointer">
-              <div>
-                <h4 className="font-medium text-on-surface text-sm">Grains de café (1kg, Arabica)</h4>
-                <p className="text-xs text-on-surface-variant mt-0.5">SKU: CF-ARB-1KG</p>
-              </div>
-              <div className="text-right">
-                <div className="text-error font-bold text-lg">1 <span className="text-xs font-normal">restant</span></div>
-                <div className="text-xs text-on-surface-variant">Min : 5</div>
-              </div>
-            </div>
+            ))}
           </div>
           <div className="p-4 pt-0 mt-auto">
             <button className="w-full py-2.5 bg-surface-container border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container-high transition-colors text-on-surface flex justify-center items-center gap-2">
