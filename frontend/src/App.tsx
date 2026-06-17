@@ -196,7 +196,7 @@ export const App: React.FC = () => {
         <Route
           path="/reports"
           element={
-            <ProtectedRoute requiredRole={['admin', 'purchase_manager', 'stock_manager']}>
+            <ProtectedRoute requiredRole={['admin', 'responsable_achats', 'gestionnaire_stock']}>
               <ReportsPage />
             </ProtectedRoute>
           }
@@ -204,7 +204,7 @@ export const App: React.FC = () => {
         <Route
           path="/reports/analytics"
           element={
-            <ProtectedRoute requiredRole={['admin', 'purchase_manager']}>
+            <ProtectedRoute requiredRole={['admin', 'responsable_achats']}>
               <AnalyticsPage />
             </ProtectedRoute>
           }
