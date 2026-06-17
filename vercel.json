@@ -1,6 +1,10 @@
 {
     "rewrites": [
         {
+            "source": "/((?!api|static|.*\\..*|_next).*)",
+            "destination": "/frontend/"
+        },
+        {
             "source": "/(.*)",
             "destination": "/frontend/$1"
         }
