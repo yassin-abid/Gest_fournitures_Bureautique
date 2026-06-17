@@ -178,7 +178,7 @@ export const App: React.FC = () => {
         <Route
           path="/orders/create"
           element={
-            <ProtectedRoute requiredRole={['admin', 'purchase_manager']}>
+            <ProtectedRoute requiredRole={['admin', 'responsable_achats']}>
               <CreateOrderPage />
             </ProtectedRoute>
           }
