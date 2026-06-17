@@ -12,6 +12,26 @@ import { Input } from '@components/FormInputs';
 import { useAuth } from '@hooks/useAuth';
 
 export const ProfilePage: React.FC = () => {
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleSavePassword = () => {
+    if (newPassword !== confirmPassword) {
+      alert('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    setIsSavingPassword(true);
+    setTimeout(() => {
+      setIsSavingPassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      alert('Mot de passe mis à jour avec succès');
+    }, 1500);
+  };
+
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -89,6 +109,46 @@ export const ProfilePage: React.FC = () => {
               isLoading={isSaving}
             >
               Enregistrer les modifications
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* Security / Password Information */}
+        <Card>
+          <CardHeader title="Sécurité & Mot de Passe" />
+          <CardBody>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Mot de passe actuel"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <div className="hidden md:block"></div>
+                <Input
+                  label="Nouveau mot de passe"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <Input
+                  label="Confirmer le nouveau mot de passe"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardBody>
+          <CardFooter>
+            <Button
+              variant="primary"
+              icon={<Save size={20} />}
+              onClick={handleSavePassword}
+              isLoading={isSavingPassword}
+            >
+              Mettre à jour le mot de passe
             </Button>
           </CardFooter>
         </Card>

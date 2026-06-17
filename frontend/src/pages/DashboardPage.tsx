@@ -539,7 +539,211 @@ const ResponsableServiceDashboard: React.FC = () => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Generic Dashboard (Admin, Employé)
+   Employé Dashboard — visible to Employé role
+───────────────────────────────────────────────────────────── */
+const EmployeDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const myRequests = [
+    { id: 'req-001', number: 'REQ-001', label: 'Papier A4 (x10 Rames)', date: '2024-06-10', status: 'submitted', statusLabel: 'Soumise', statusColor: 'text-blue-600 bg-blue-50' },
+    { id: 'req-002', number: 'REQ-002', label: 'Stylos Bille Bleu (x50)', date: '2024-06-08', status: 'approved', statusLabel: 'Approuvée ✓', statusColor: 'text-emerald-700 bg-emerald-50' },
+    { id: 'req-003', number: 'REQ-003', label: 'Ruban adhésif (x5)', date: '2024-06-05', status: 'rejected', statusLabel: 'Refusée ✗', statusColor: 'text-red-700 bg-red-50' },
+    { id: 'req-004', number: 'REQ-004', label: 'Agrafeuse de bureau (x2)', date: '2024-05-28', status: 'delivered', statusLabel: 'Livrée ✓', statusColor: 'text-purple-700 bg-purple-50' },
+  ];
+
+  const notifications = [
+    { icon: 'check_circle', color: 'text-emerald-500', message: 'Votre demande REQ-002 a été approuvée par votre responsable.', time: 'Il y a 2h', read: false },
+    { icon: 'cancel', color: 'text-red-500', message: 'Votre demande REQ-003 a été refusée. Motif : Budget insuffisant.', time: 'Hier', read: false },
+    { icon: 'local_shipping', color: 'text-purple-500', message: 'Votre commande REQ-004 a été livrée et disponible.', time: 'Il y a 3 jours', read: true },
+  ];
+
+  const submittedCount = myRequests.filter(r => r.status === 'submitted').length;
+  const approvedCount = myRequests.filter(r => r.status === 'approved').length;
+  const rejectedCount = myRequests.filter(r => r.status === 'rejected').length;
+  const deliveredCount = myRequests.filter(r => r.status === 'delivered').length;
+  const unreadNotifs = notifications.filter(n => !n.read).length;
+
+  return (
+    <MainLayout>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Bienvenue, {user?.firstName} !</h2>
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant">Suivez vos demandes de fournitures et consultez leur évolution.</p>
+        </div>
+        <button
+          onClick={() => navigate('/requests/create')}
+          className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Nouvelle Demande
+        </button>
+      </div>
+
+      {/* Notifications Banner */}
+      {unreadNotifs > 0 && (
+        <div className="flex items-center gap-3 p-4 bg-secondary/10 border border-secondary/20 rounded-xl mb-gutter">
+          <span className="material-symbols-outlined text-secondary shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
+          <p className="flex-1 text-sm text-on-surface font-medium">
+            Vous avez <strong>{unreadNotifs} nouvelle(s) notification(s)</strong> sur vos demandes.
+          </p>
+        </div>
+      )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-surface border border-blue-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">En cours</p>
+            <span className="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
+          </div>
+          <h3 className="text-4xl font-bold text-blue-700">{submittedCount}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">En attente d'approbation</p>
+        </div>
+
+        <div className="bg-surface border border-emerald-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Approuvées</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          </div>
+          <h3 className="text-4xl font-bold text-emerald-700">{approvedCount}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Validées par le service</p>
+        </div>
+
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Livrées</p>
+            <span className="material-symbols-outlined text-purple-600 bg-purple-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
+          </div>
+          <h3 className="text-4xl font-bold text-purple-700">{deliveredCount}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Reçues ce mois</p>
+        </div>
+
+        <div className="bg-surface border border-red-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-red-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-red-600 uppercase tracking-widest">Refusées</p>
+            <span className="material-symbols-outlined text-red-600 bg-red-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>
+          </div>
+          <h3 className="text-4xl font-bold text-red-700">{rejectedCount}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Avec motif de refus</p>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-gutter">
+        {/* My Requests History */}
+        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Mes Demandes Récentes</h3>
+              <p className="text-xs text-on-surface-variant">Historique de vos soumissions</p>
+            </div>
+            <button onClick={() => navigate('/requests')} className="text-secondary text-sm font-semibold hover:underline">
+              Voir tout →
+            </button>
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {myRequests.map(req => (
+              <div key={req.id} className="flex items-center gap-4 px-5 py-4 hover:bg-surface-container-lowest transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-bold text-on-surface-variant">{req.number}</span>
+                    <span className="text-[10px] text-on-surface-variant">· {req.date}</span>
+                  </div>
+                  <p className="text-sm font-medium text-on-surface truncate">{req.label}</p>
+                </div>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${req.statusColor}`}>
+                  {req.statusLabel}
+                </span>
+                <button onClick={() => navigate(`/requests/${req.id}`)} className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg transition-colors">
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward_ios</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Notifications Panel */}
+        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden">
+          <div className="p-5 border-b border-outline-variant flex items-center gap-2 bg-surface/50">
+            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">notifications</span>
+            <h3 className="text-lg font-semibold text-on-surface flex-1">Notifications</h3>
+            {unreadNotifs > 0 && (
+              <span className="text-xs font-bold text-on-secondary bg-secondary px-2 py-0.5 rounded-full">{unreadNotifs}</span>
+            )}
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {notifications.map((notif, i) => (
+              <div key={i} className={`flex gap-3 px-5 py-4 ${!notif.read ? 'bg-secondary/5' : ''}`}>
+                <span className={`material-symbols-outlined text-[20px] shrink-0 mt-0.5 ${notif.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {notif.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm ${!notif.read ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}>
+                    {notif.message}
+                  </p>
+                  <p className="text-[10px] text-on-surface-variant mt-1">{notif.time}</p>
+                </div>
+                {!notif.read && <span className="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1.5" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-gutter">
+        <button
+          onClick={() => navigate('/requests/create')}
+          className="flex items-center gap-4 p-5 bg-surface border border-outline-variant rounded-xl soft-shadow hover:border-secondary/50 hover:shadow-md transition-all group text-left"
+        >
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors shrink-0">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>add_shopping_cart</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-on-surface">Nouvelle demande</h4>
+            <p className="text-xs text-on-surface-variant">Soumettre un besoin en fournitures</p>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/requests')}
+          className="flex items-center gap-4 p-5 bg-surface border border-outline-variant rounded-xl soft-shadow hover:border-secondary/50 hover:shadow-md transition-all group text-left"
+        >
+          <div className="w-12 h-12 rounded-xl bg-primary-fixed/20 flex items-center justify-center group-hover:bg-primary-fixed/30 transition-colors shrink-0">
+            <span className="material-symbols-outlined text-primary-fixed-dim" style={{ fontVariationSettings: "'FILL' 1" }}>list_alt</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-on-surface">Mes demandes</h4>
+            <p className="text-xs text-on-surface-variant">Consulter l'historique complet</p>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-4 p-5 bg-surface border border-outline-variant rounded-xl soft-shadow hover:border-secondary/50 hover:shadow-md transition-all group text-left"
+        >
+          <div className="w-12 h-12 rounded-xl bg-tertiary-fixed/20 flex items-center justify-center group-hover:bg-tertiary-fixed/30 transition-colors shrink-0">
+            <span className="material-symbols-outlined text-on-tertiary-container" style={{ fontVariationSettings: "'FILL' 1" }}>manage_accounts</span>
+          </div>
+          <div>
+            <h4 className="font-semibold text-on-surface">Mon profil</h4>
+            <p className="text-xs text-on-surface-variant">Mettre à jour mes informations</p>
+          </div>
+        </button>
+      </div>
+    </MainLayout>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Generic Dashboard (Admin)
 ───────────────────────────────────────────────────────────── */
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -564,6 +768,9 @@ export const DashboardPage: React.FC = () => {
   }
   if (user?.role === 'responsable_service') {
     return <ResponsableServiceDashboard />;
+  }
+  if (user?.role === 'employe') {
+    return <EmployeDashboard />;
   }
 
   return (

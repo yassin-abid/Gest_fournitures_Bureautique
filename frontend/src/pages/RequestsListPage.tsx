@@ -394,6 +394,24 @@ export const RequestsListPage: React.FC = () => {
               />
             </>
           )}
+
+          {/* Employé pending actions (submitted / pending) */}
+          {user?.role === 'employe' && (row.status === 'submitted' || row.status === 'pending') && (
+            <>
+              <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} title="Modifier la demande">
+                Modifier
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<XCircle size={16} />}
+                onClick={() => setIsDeleteModalOpen(true)}
+                title="Annuler la demande"
+              >
+                Annuler
+              </Button>
+            </>
+          )}
         </div>
       ),
     },

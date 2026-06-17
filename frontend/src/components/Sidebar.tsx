@@ -177,6 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="flex flex-col ml-[28px] mt-1 space-y-1 sidebar-subitems">
               {item.subItems!.filter(sub => {
                 if (sub.path === '/requests/create' && user?.role === 'responsable_achats') return false;
+                if (sub.path === '/requests/create' && user?.role === 'responsable_service') return false;
                 return true;
               }).map(sub => (
                 <NavLink
