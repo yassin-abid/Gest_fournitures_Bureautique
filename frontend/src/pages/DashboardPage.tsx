@@ -906,7 +906,168 @@ const ResponsableAchatsDashboard: React.FC = () => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Generic Dashboard (Admin)
+   Admin Dashboard — visible to Administrateur
+───────────────────────────────────────────────────────────── */
+const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const recentLogs = [
+    { id: 'LOG-001', user: 'Youssef Trabelsi', action: 'Connexion réussie', time: 'Aujourd\'hui, 08:30', type: 'info', icon: 'login' },
+    { id: 'LOG-002', user: 'Sonia Ben Ali', action: 'Validation de demande REQ-042', time: 'Aujourd\'hui, 09:15', type: 'success', icon: 'check_circle' },
+    { id: 'LOG-003', user: 'Système', action: 'Échec sauvegarde auto', time: 'Hier, 23:00', type: 'error', icon: 'warning' },
+    { id: 'LOG-004', user: 'Admin', action: 'Modification rôle utilisateur', time: 'Hier, 15:40', type: 'warning', icon: 'manage_accounts' },
+  ];
+
+  return (
+    <MainLayout>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>shield_person</span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Tableau de Bord — Administration</h2>
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant">Supervision globale du système, des utilisateurs et des accès.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate('/admin/users')}
+            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-sm">person_add</span>
+            Nouvel Utilisateur
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-surface border border-blue-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Utilisateurs Actifs</p>
+            <span className="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+          </div>
+          <h3 className="text-4xl font-bold text-blue-700">45</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Sur 48 comptes totaux</p>
+        </div>
+
+        <div className="bg-surface border border-emerald-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Santé du Système</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>monitor_heart</span>
+          </div>
+          <h3 className="text-4xl font-bold text-emerald-700">99.9<span className="text-lg text-emerald-600/70 ml-1">%</span></h3>
+          <p className="text-xs text-on-surface-variant mt-1">Uptime sur 30 jours</p>
+        </div>
+
+        <div className="bg-surface border border-amber-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Alertes & Erreurs</p>
+            <span className="material-symbols-outlined text-amber-600 bg-amber-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+          </div>
+          <h3 className="text-4xl font-bold text-amber-700">3</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Dans les dernières 24h</p>
+        </div>
+
+        <div className="bg-surface border border-purple-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Départements</p>
+            <span className="material-symbols-outlined text-purple-600 bg-purple-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>domain</span>
+          </div>
+          <h3 className="text-4xl font-bold text-purple-700">6</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Enregistrés dans l'application</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-gutter">
+        {/* Activité Système Récente */}
+        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Journaux Système Récents</h3>
+              <p className="text-xs text-on-surface-variant">Dernières actions enregistrées par la plateforme</p>
+            </div>
+            <button onClick={() => navigate('/admin/logs')} className="text-secondary text-sm font-semibold hover:underline">
+              Tous les logs →
+            </button>
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {recentLogs.map(log => (
+              <div key={log.id} className="p-5 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-full ${
+                    log.type === 'error' ? 'bg-red-100 text-red-600' :
+                    log.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                    log.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                    'bg-blue-100 text-blue-600'
+                  }`}>
+                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>{log.icon}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-on-surface text-sm">{log.action}</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">Par : {log.user}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-medium text-on-surface-variant">{log.time}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Accès Rapides */}
+        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex items-center bg-surface/50">
+            <h3 className="text-lg font-semibold text-on-surface flex-1">Accès Rapides</h3>
+          </div>
+          <div className="p-2 flex-1 flex flex-col gap-2">
+            <button
+              onClick={() => navigate('/admin/users')}
+              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
+                <span className="material-symbols-outlined text-blue-600" style={{ fontVariationSettings: "'FILL' 1" }}>group_add</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Gestion des utilisateurs</h4>
+                <p className="text-xs text-on-surface-variant">Créer ou modifier des comptes</p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/admin/roles')}
+              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors shrink-0">
+                <span className="material-symbols-outlined text-purple-600" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Rôles & Permissions</h4>
+                <p className="text-xs text-on-surface-variant">Ajuster les droits d'accès</p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/admin/settings')}
+              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
+            >
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors shrink-0">
+                <span className="material-symbols-outlined text-slate-600" style={{ fontVariationSettings: "'FILL' 1" }}>settings</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Paramètres globaux</h4>
+                <p className="text-xs text-on-surface-variant">Configuration système</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Root Dashboard Router
 ───────────────────────────────────────────────────────────── */
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -939,248 +1100,7 @@ export const DashboardPage: React.FC = () => {
     return <ResponsableAchatsDashboard />;
   }
 
-  return (
-    <MainLayout>
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
-        <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">Tableau de bord</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant">Indicateurs en temps réel pour l'inventaire et les achats.</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="px-4 py-2 font-button text-sm font-semibold text-on-surface border border-outline-variant rounded-lg hover:bg-surface-container-high transition-colors flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">download</span>
-            Exporter le rapport
-          </button>
-          <button
-            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
-            onClick={() => navigate('/requests/create')}
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            Nouvelle Demande
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
-        {/* KPI 1 */}
-        <div className="bg-surface border border-outline-variant rounded-xl p-6 soft-shadow relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-primary-fixed/20 rounded-full blur-xl group-hover:bg-primary-fixed/30 transition-colors"></div>
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <p className="font-label-md text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">Valeur Totale du Stock</p>
-            <span className="material-symbols-outlined text-primary-fixed-dim bg-primary-fixed/10 p-2 rounded-lg">account_balance_wallet</span>
-          </div>
-          <h3 className="font-display text-[48px] font-bold text-on-surface relative z-10 leading-tight">
-            45.2k<span className="text-xl font-normal text-on-surface-variant align-top ml-1">TND</span>
-          </h3>
-          <div className="mt-4 flex items-center gap-2 relative z-10">
-            <span className="flex items-center text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-1 rounded text-xs font-semibold">
-              <span className="material-symbols-outlined text-[14px] mr-1">trending_up</span> +2.4%
-            </span>
-            <span className="text-xs text-on-surface-variant">vs mois dernier</span>
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="bg-surface border border-outline-variant rounded-xl p-6 soft-shadow relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-secondary-fixed/20 rounded-full blur-xl group-hover:bg-secondary-fixed/30 transition-colors"></div>
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <p className="font-label-md text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">Demandes en attente</p>
-            <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">pending_actions</span>
-          </div>
-          <h3 className="font-display text-[48px] font-bold text-on-surface relative z-10 leading-tight">128</h3>
-          <div className="mt-4 flex items-center gap-2 relative z-10">
-            <span className="flex items-center text-on-surface-variant bg-surface-container px-2 py-1 rounded text-xs font-semibold">
-              <span className="material-symbols-outlined text-[14px] mr-1">schedule</span> Moy. 2 jours
-            </span>
-            <span className="text-xs text-on-surface-variant">temps de traitement</span>
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="bg-surface border border-outline-variant rounded-xl p-6 soft-shadow relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-tertiary-fixed/20 rounded-full blur-xl group-hover:bg-tertiary-fixed/30 transition-colors"></div>
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <p className="font-label-md text-[12px] font-semibold text-on-surface-variant uppercase tracking-wider">Commandes Actives</p>
-            <span className="material-symbols-outlined text-on-tertiary-container bg-tertiary-fixed/30 p-2 rounded-lg">local_shipping</span>
-          </div>
-          <h3 className="font-display text-[48px] font-bold text-on-surface relative z-10 leading-tight">34</h3>
-          <div className="mt-4 flex items-center gap-2 relative z-10">
-            <span className="flex items-center text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-1 rounded text-xs font-semibold">
-              <span className="material-symbols-outlined text-[14px] mr-1">trending_up</span> +12%
-            </span>
-            <span className="text-xs text-on-surface-variant">vs mois dernier</span>
-          </div>
-        </div>
-
-        {/* KPI 4 (Alert) */}
-        <div className="bg-surface border border-error/20 rounded-xl p-6 soft-shadow relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-error/10 rounded-full blur-xl group-hover:bg-error/20 transition-colors"></div>
-          <div className="flex justify-between items-start mb-4 relative z-10">
-            <p className="font-label-md text-[12px] font-semibold text-error uppercase tracking-wider">Alertes de Stock Bas</p>
-            <span className="material-symbols-outlined text-error bg-error/10 p-2 rounded-lg" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
-          </div>
-          <h3 className="font-display text-[48px] font-bold text-on-surface relative z-10 leading-tight">
-            14<span className="text-lg font-normal text-on-surface-variant ml-2 align-baseline">articles</span>
-          </h3>
-          <div className="mt-4 flex items-center gap-2 relative z-10">
-            <span className="flex items-center text-error bg-error/10 px-2 py-1 rounded text-xs font-semibold">
-              <span className="material-symbols-outlined text-[14px] mr-1">trending_up</span> +3
-            </span>
-            <span className="text-xs text-on-surface-variant">action requise</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-8">
-        {/* Line Chart: Consumption */}
-        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl p-6 soft-shadow flex flex-col h-[400px]">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h3 className="font-headline-md text-[24px] font-semibold text-on-surface">Consommation de fournitures</h3>
-              <p className="font-body-sm text-sm text-on-surface-variant">Dépenses mensuelles par catégorie (TND)</p>
-            </div>
-            <select className="bg-surface-container-low border border-outline-variant text-sm rounded-lg px-3 py-1.5 focus:ring-secondary focus:border-secondary outline-none">
-              <option>6 Derniers Mois</option>
-              <option>Cette Année</option>
-            </select>
-          </div>
-          <div className="flex-1 relative w-full h-full bg-surface-container-low/50 rounded-lg border border-outline-variant/50 overflow-hidden flex items-end px-4 pb-4 gap-4">
-            {[
-              { label: 'Jan', h: '30', val: '12k' },
-              { label: 'Fév', h: '45', val: '18k' },
-              { label: 'Mar', h: '25', val: '10k' },
-              { label: 'Avr', h: '60', val: '24k' },
-              { label: 'Mai', h: '80', val: '32k', active: true },
-              { label: 'Jun', h: '50', val: '20k' },
-            ].map((bar) => (
-              <div key={bar.label} className="flex-1 flex flex-col justify-end gap-2 group cursor-pointer h-full">
-                <div
-                  className={`w-full ${bar.active ? 'bg-secondary shadow-[0_0_15px_rgba(49,107,243,0.3)]' : 'bg-primary-fixed group-hover:bg-secondary transition-colors'} rounded-t-sm relative mt-auto`}
-                  style={{ height: `${bar.h}%` }}
-                >
-                  <div className={`absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface text-xs py-1 px-2 rounded ${bar.active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                    {bar.val}
-                  </div>
-                </div>
-                <span className={`text-center text-xs font-semibold ${bar.active ? 'text-on-surface' : 'text-on-surface-variant'}`}>{bar.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Donut Chart: Requests by Dept */}
-        <div className="bg-surface border border-outline-variant rounded-xl p-6 soft-shadow flex flex-col h-[400px]">
-          <div className="mb-6">
-            <h3 className="font-headline-md text-[24px] font-semibold text-on-surface">Demandes par Département</h3>
-            <p className="font-body-sm text-sm text-on-surface-variant">Répartition du mois en cours</p>
-          </div>
-          <div className="flex-1 flex items-center justify-center relative">
-            <div className="w-48 h-48 rounded-full border-[16px] border-surface-container relative flex items-center justify-center">
-              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle className="text-secondary" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="100 164" strokeDashoffset="0" strokeWidth="16"></circle>
-                <circle className="text-primary-fixed" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="70 194" strokeDashoffset="-100" strokeWidth="16"></circle>
-                <circle className="text-tertiary-fixed-dim" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="40 224" strokeDashoffset="-170" strokeWidth="16"></circle>
-                <circle className="text-surface-variant" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="54 210" strokeDashoffset="-210" strokeWidth="16"></circle>
-              </svg>
-              <div className="text-center">
-                <span className="block font-display text-[24px] font-bold text-on-surface leading-none">284</span>
-                <span className="font-label-md text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Total Dmd</span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            {[['bg-secondary', 'Dpt. Info', '38%'], ['bg-primary-fixed', 'RH', '26%'], ['bg-tertiary-fixed-dim', 'Opérations', '15%']].map(([color, label, pct]) => (
-              <div key={label} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2"><span className={`w-3 h-3 rounded-full ${color}`}></span><span className="text-on-surface">{label}</span></div>
-                <span className="font-semibold">{pct}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section: Tables & Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-8">
-        {/* Recent Activity Table */}
-        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-outline-variant flex justify-between items-center bg-surface/50 backdrop-blur-sm">
-            <h3 className="font-headline-md text-[24px] font-semibold text-on-surface">Activité Récente</h3>
-            <button className="text-secondary hover:text-secondary/80 font-semibold text-sm transition-colors">Voir Tout</button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-outline-variant/50 bg-surface-container-lowest">
-                  <th className="py-3 px-6 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">ID / Article</th>
-                  <th className="py-3 px-6 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Demandeur</th>
-                  <th className="py-3 px-6 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Date</th>
-                  <th className="py-3 px-6 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm divide-y divide-outline-variant/30">
-                {[
-                  { id: 'REQ-1042', article: 'Ordinateurs Dell XPS 15 (x3)', who: 'Sarah Connor', dept: 'Dpt. Info', date: "Aujourd'hui, 10:45", statusClass: 'bg-secondary/10 text-secondary border-secondary/20', dot: 'bg-secondary', label: 'En traitement' },
-                  { id: 'REQ-1041', article: 'Papier A4 (x50 boîtes)', who: 'John Smith', dept: 'Opérations', date: 'Hier, 14:20', statusClass: 'bg-tertiary-fixed-dim/20 text-on-tertiary-fixed-variant border-tertiary-fixed-dim/30', dot: 'bg-on-tertiary-fixed-variant', label: 'Approuvé' },
-                  { id: 'REQ-1040', article: 'Chaises ergonomiques (x12)', who: 'Emma Davis', dept: 'RH', date: '24 Oct, 2023', statusClass: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/50', dot: 'bg-outline', label: 'Livré' },
-                  { id: 'ORD-5092', article: 'Réapprovisionnement: Cartouches Toner', who: 'Auto Système', dept: 'Achats', date: '23 Oct, 2023', statusClass: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Retardé' },
-                ].map((row) => (
-                  <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors cursor-pointer">
-                    <td className="py-4 px-6">
-                      <div className="font-medium text-on-surface">{row.id}</div>
-                      <div className="text-on-surface-variant text-xs mt-0.5">{row.article}</div>
-                    </td>
-                    <td className="py-4 px-6 text-on-surface">{row.who} <span className="text-on-surface-variant text-xs block">{row.dept}</span></td>
-                    <td className="py-4 px-6 text-on-surface-variant">{row.date}</td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${row.statusClass}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${row.dot}`}></span> {row.label}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Critical Alerts Section */}
-        <div className="bg-surface border border-error/20 rounded-xl soft-shadow flex flex-col relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-error"></div>
-          <div className="p-6 border-b border-outline-variant/30 flex items-center gap-3">
-            <span className="material-symbols-outlined text-error" style={{ fontVariationSettings: "'FILL' 1" }}>error</span>
-            <h3 className="font-headline-md text-[24px] font-semibold text-on-surface">Rupture de stock critique</h3>
-          </div>
-          <div className="p-4 flex-1 flex flex-col gap-3">
-            {[
-              { name: 'Toner Laser HP Noir 85A', sku: 'TNR-85A-BLK', qty: 2, unit: 'restants', min: 10 },
-              { name: 'Marqueurs effaçables (Pack 4)', sku: 'MRK-EX-4PK', qty: 5, unit: 'restants', min: 20 },
-              { name: 'Grains de café (1kg, Arabica)', sku: 'CF-ARB-1KG', qty: 1, unit: 'restant', min: 5 },
-            ].map((item) => (
-              <div key={item.sku} className="p-3 rounded-lg border border-error/10 bg-error/5 hover:bg-error/10 transition-colors flex items-center justify-between cursor-pointer">
-                <div>
-                  <h4 className="font-medium text-on-surface text-sm">{item.name}</h4>
-                  <p className="text-xs text-on-surface-variant mt-0.5">SKU: {item.sku}</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-error font-bold text-lg">{item.qty} <span className="text-xs font-normal">{item.unit}</span></div>
-                  <div className="text-xs text-on-surface-variant">Min : {item.min}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 pt-0 mt-auto">
-            <button className="w-full py-2.5 bg-surface-container border border-outline-variant rounded-lg text-sm font-semibold hover:bg-surface-container-high transition-colors text-on-surface flex justify-center items-center gap-2">
-              Examiner toutes les alertes
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </MainLayout>
-  );
+  return <AdminDashboard />;
 };
 
 DashboardPage.displayName = 'DashboardPage';
