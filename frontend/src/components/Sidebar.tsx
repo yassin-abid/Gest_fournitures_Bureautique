@@ -38,9 +38,9 @@ const navItems: NavItem[] = [
     icon: 'inventory_2',
     roles: ['admin', 'gestionnaire_stock', 'responsable_achats'],
     subItems: [
-      { label: 'Articles',      path: '/catalog/articles' },
-      { label: 'Catégories',    path: '/catalog/categories' },
-      { label: 'Fournisseurs',  path: '/catalog/suppliers' },
+      { label: 'Articles', path: '/catalog/articles' },
+      { label: 'Catégories', path: '/catalog/categories' },
+      { label: 'Fournisseurs', path: '/catalog/suppliers' },
     ],
   },
 
@@ -51,9 +51,9 @@ const navItems: NavItem[] = [
     icon: 'inventory',
     roles: ['admin', 'gestionnaire_stock'],
     subItems: [
-      { label: 'Statut',      path: '/stock/status' },
-      { label: 'Mouvements',  path: '/stock/movements' },
-      { label: 'Alertes',     path: '/stock/alerts' },
+      { label: 'Statut', path: '/stock/status' },
+      { label: 'Mouvements', path: '/stock/movements' },
+      { label: 'Alertes', path: '/stock/alerts' },
     ],
   },
 
@@ -68,8 +68,8 @@ const navItems: NavItem[] = [
     icon: 'request_quote',
     roles: ['admin', 'responsable_service', 'gestionnaire_stock', 'responsable_achats', 'employe'],
     subItems: [
-      { label: 'Liste',   path: '/requests' },
-      { label: 'Créer',   path: '/requests/create' },
+      { label: 'Liste', path: '/requests' },
+      { label: 'Créer', path: '/requests/create' },
     ],
   },
 
@@ -80,8 +80,8 @@ const navItems: NavItem[] = [
     icon: 'shopping_cart',
     roles: ['admin', 'responsable_achats'],
     subItems: [
-      { label: 'Liste',   path: '/orders' },
-      { label: 'Créer',   path: '/orders/create' },
+      { label: 'Liste', path: '/orders' },
+      { label: 'Créer', path: '/orders/create' },
     ],
   },
 
@@ -92,7 +92,7 @@ const navItems: NavItem[] = [
     icon: 'bar_chart',
     roles: ['admin', 'gestionnaire_stock', 'responsable_achats'],
     subItems: [
-      { label: 'Général',           path: '/reports' },
+      { label: 'Général', path: '/reports' },
       { label: 'Bilan & Prévisions', path: '/reports/analytics' },
     ],
   },
@@ -104,9 +104,9 @@ const navItems: NavItem[] = [
     icon: 'admin_panel_settings',
     roles: ['admin'],
     subItems: [
-      { label: 'Utilisateurs',       path: '/admin/users' },
+      { label: 'Utilisateurs', path: '/admin/users' },
       { label: 'Rôles & Permissions', path: '/admin/roles' },
-      { label: 'Paramètres',          path: '/admin/settings' },
+      { label: 'Paramètres', path: '/admin/settings' },
     ],
   },
 ];
@@ -138,11 +138,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   };
 
   const roleLabels: Record<string, string> = {
-    admin:               '🛡 Administrateur',
+    admin: '🛡 Administrateur',
     responsable_service: '✅ Resp. de Service',
-    gestionnaire_stock:  '📦 Gest. de Stock',
-    responsable_achats:  '🛒 Resp. Achats',
-    employe:             '👤 Employé',
+    gestionnaire_stock: '📦 Gest. de Stock',
+    responsable_achats: '🛒 Resp. Achats',
+    employe: '👤 Employé',
   };
 
   const renderNavItems = (items: NavItem[]) => {
@@ -156,10 +156,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             to={hasSubItems ? '#' : item.path}
             onClick={hasSubItems ? (e) => toggleExpand(item.path, e) : onClose}
             className={({ isActive }) =>
-              `flex items-center px-3 py-2.5 rounded-lg font-medium transition-all duration-200 ease-in-out border-l-4 shrink-0 group relative overflow-hidden ${
-                isActive && !hasSubItems
-                  ? 'text-secondary border-secondary bg-secondary/10 font-bold'
-                  : 'text-on-primary-container/70 border-transparent hover:bg-on-primary-container/5 hover:text-on-primary-container'
+              `flex items-center px-3 py-2.5 rounded-lg font-medium transition-all duration-200 ease-in-out border-l-4 shrink-0 group relative overflow-hidden ${isActive && !hasSubItems
+                ? 'text-secondary border-secondary bg-secondary/10 font-bold'
+                : 'text-on-primary-container/70 border-transparent hover:bg-on-primary-container/5 hover:text-on-primary-container'
               }`
             }
             title={item.label}
@@ -172,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               )}
             </span>
           </NavLink>
-          
+
           {hasSubItems && isExpanded && (
             <div className="flex flex-col ml-[28px] mt-1 space-y-1 sidebar-subitems">
               {item.subItems!.map(sub => (
@@ -181,10 +180,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   to={sub.path}
                   onClick={onClose}
                   className={({ isActive }) =>
-                    `sidebar-label opacity-0 w-0 overflow-hidden whitespace-nowrap transition-all duration-300 px-3 py-1.5 rounded-lg text-sm ${
-                      isActive
-                        ? 'text-secondary font-bold bg-secondary/5'
-                        : 'text-on-primary-container/60 hover:text-on-primary-container hover:bg-on-primary-container/5'
+                    `sidebar-label opacity-0 w-0 overflow-hidden whitespace-nowrap transition-all duration-300 px-3 py-1.5 rounded-lg text-sm ${isActive
+                      ? 'text-secondary font-bold bg-secondary/5'
+                      : 'text-on-primary-container/60 hover:text-on-primary-container hover:bg-on-primary-container/5'
                     }`
                   }
                 >
@@ -208,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         />
       )}
 
-      <nav 
+      <nav
         id="sidebar"
         style={{ position: 'fixed', left: 0, top: 0, height: '100vh', width: '80px', zIndex: 50, transition: 'width 300ms ease-in-out' }}
         onMouseEnter={e => (e.currentTarget.style.width = '280px')}
@@ -254,9 +252,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <span className="material-symbols-outlined shrink-0" data-icon="help">help</span>
             <span className="sidebar-label opacity-0 w-0 overflow-hidden whitespace-nowrap transition-all duration-300 text-body-md font-body-md">Support</span>
           </a>
-          <button 
+          <button
             onClick={handleLogout}
-            className="flex items-center px-3 py-2.5 rounded-lg text-error/80 font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out border-l-4 border-transparent shrink-0 group relative overflow-hidden text-left" 
+            className="flex items-center px-3 py-2.5 rounded-lg text-error/80 font-medium hover:bg-error/10 hover:text-error transition-all duration-200 ease-in-out border-l-4 border-transparent shrink-0 group relative overflow-hidden text-left"
             title="Logout"
           >
             <span className="material-symbols-outlined shrink-0" data-icon="logout">logout</span>
@@ -264,7 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
       </nav>
-      
+
       {/* Required CSS injected globally for sidebar hover logic */}
       <style>{`
         #sidebar:hover .sidebar-label, .sidebar-subitems .sidebar-label {
