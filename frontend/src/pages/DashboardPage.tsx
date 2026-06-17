@@ -1072,7 +1072,6 @@ const AdminDashboard: React.FC = () => {
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 500);
