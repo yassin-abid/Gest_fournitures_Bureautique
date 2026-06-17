@@ -92,8 +92,8 @@ const navItems: NavItem[] = [
     icon: 'bar_chart',
     roles: ['admin', 'gestionnaire_stock', 'responsable_achats'],
     subItems: [
-      { label: 'Général',     path: '/reports' },
-      { label: 'Analytique',  path: '/reports/analytics' },
+      { label: 'Général',           path: '/reports' },
+      { label: 'Bilan & Prévisions', path: '/reports/analytics' },
     ],
   },
 

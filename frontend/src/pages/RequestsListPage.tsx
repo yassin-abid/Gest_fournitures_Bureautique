@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Edit2, Trash2, Send } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, Send, PackageCheck, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -133,9 +133,10 @@ export const RequestsListPage: React.FC = () => {
 
   const filteredRequests = useMemo(() => {
     return mockRequests.filter((request) => {
-      if (user?.role === 'employe' && request.userId !== user?.id) {
-        return false;
-      }
+      // Employé: only see own requests
+      if (user?.role === 'employe' && request.userId !== user?.id) return false;
+      // Responsable Achats: only see approved requests
+      if (user?.role === 'responsable_achats' && request.status !== 'approved') return false;
 
       const matchesSearch =
         request.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -270,18 +271,42 @@ export const RequestsListPage: React.FC = () => {
       key: 'id' as const,
       label: 'Actions',
       sortable: false,
-      width: '200px',
+      width: '240px',
       render: (_value: string, row: SupplyRequest) => (
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="ghost"
+            size="sm"
             icon={<Eye size={16} />}
             onClick={() => navigate(`/requests/${row.id}`)}
           >
             Voir
           </Button>
-          {row.status === 'draft' && (
+
+          {/* Responsable Achats actions on approved requests */}
+          {user?.role === 'responsable_achats' && row.status === 'approved' && (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Loader2 size={16} />}
+                title="Marquer en cours de traitement"
+              >
+                En cours
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<PackageCheck size={16} />}
+                title="Marquer comme livrée"
+              >
+                Livrée
+              </Button>
+            </>
+          )}
+
+          {/* Employé/Other draft actions */}
+          {user?.role !== 'responsable_achats' && row.status === 'draft' && (
             <>
               <Button variant="ghost" size="sm" icon={<Edit2 size={16} />}>
                 Modifier
@@ -289,15 +314,13 @@ export const RequestsListPage: React.FC = () => {
               <Button variant="ghost" size="sm" icon={<Send size={16} />}>
                 Soumettre
               </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Trash2 size={16} />}
+                onClick={() => setIsDeleteModalOpen(true)}
+              />
             </>
-          )}
-          {row.status === 'draft' && (
-            <Button
-              variant="danger"
-              size="sm"
-              icon={<Trash2 size={16} />}
-              onClick={() => setIsDeleteModalOpen(true)}
-            />
           )}
         </div>
       ),
@@ -314,16 +337,24 @@ export const RequestsListPage: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-neutral-900">Demandes de Fournitures</h2>
-            <p className="text-neutral-600 mt-2">Gérez les demandes de fournitures de votre équipe</p>
+            <h2 className="text-3xl font-bold text-neutral-900">
+              {user?.role === 'responsable_achats' ? 'Demandes Approuvées' : 'Demandes de Fournitures'}
+            </h2>
+            <p className="text-neutral-600 mt-2">
+              {user?.role === 'responsable_achats'
+                ? 'Consultez les demandes approuvées et mettez à jour leur statut de traitement'
+                : 'Gérez les demandes de fournitures de votre équipe'}
+            </p>
           </div>
-          <Button
-            variant="primary"
-            icon={<Plus size={20} />}
-            onClick={() => window.location.href = '/requests/create'}
-          >
-            Nouvelle Demande
-          </Button>
+          {user?.role !== 'responsable_achats' && (
+            <Button
+              variant="primary"
+              icon={<Plus size={20} />}
+              onClick={() => window.location.href = '/requests/create'}
+            >
+              Nouvelle Demande
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
