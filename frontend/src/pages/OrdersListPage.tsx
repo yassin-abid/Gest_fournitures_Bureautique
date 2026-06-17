@@ -14,9 +14,11 @@ import { Badge } from '@components/Badge';
 import { Select } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { Modal } from '@components/Modal';
+import { useNavigate } from 'react-router-dom';
 import type { Order } from '@/types/requests';
 
 export const OrdersListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -222,7 +224,7 @@ export const OrdersListPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus size={20} />}
-            onClick={() => window.location.href = '/orders/create'}
+            onClick={() => navigate('/orders/create')}
           >
             Nouvelle Commande
           </Button>

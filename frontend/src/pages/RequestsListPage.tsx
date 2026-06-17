@@ -350,7 +350,7 @@ export const RequestsListPage: React.FC = () => {
             <Button
               variant="primary"
               icon={<Plus size={20} />}
-              onClick={() => window.location.href = '/requests/create'}
+              onClick={() => navigate('/requests/create')}
             >
               Nouvelle Demande
             </Button>

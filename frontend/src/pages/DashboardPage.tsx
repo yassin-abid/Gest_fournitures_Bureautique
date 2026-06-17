@@ -6,10 +6,12 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../layouts/MainLayout';
 import { Loader } from '../components/Loader';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Simulate loading data
@@ -40,7 +42,7 @@ export const DashboardPage: React.FC = () => {
           {user?.role !== 'responsable_achats' && (
             <button 
               className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
-              onClick={() => window.location.href = '/requests/create'}
+              onClick={() => navigate('/requests/create')}
             >
               <span className="material-symbols-outlined text-sm">add</span>
               Nouvelle Demande
