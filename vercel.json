@@ -1,7 +1,9 @@
 {
+    "buildCommand": "cd frontend && npm run build",
+    "outputDirectory": "frontend/.next",
     "rewrites": [
         {
-            "source": "/((?!api|static|.*\\..*|_next).*)",
+            "source": "/((?!api|static|_next|.*\\..*).*)",
             "destination": "/frontend/"
         },
         {
