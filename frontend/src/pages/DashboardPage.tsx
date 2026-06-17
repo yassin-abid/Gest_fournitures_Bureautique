@@ -747,7 +747,6 @@ const EmployeDashboard: React.FC = () => {
 ───────────────────────────────────────────────────────────── */
 const ResponsableAchatsDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const pendingRequests = [
     { id: 'REQ-010', dept: 'Ressources Humaines', items: 'Fournitures de bureau standard', priority: 'high', date: 'Aujourd\'hui' },
@@ -953,15 +952,13 @@ export const DashboardPage: React.FC = () => {
             <span className="material-symbols-outlined text-sm">download</span>
             Exporter le rapport
           </button>
-          {user?.role !== 'responsable_achats' && (
-            <button
-              className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
-              onClick={() => navigate('/requests/create')}
-            >
-              <span className="material-symbols-outlined text-sm">add</span>
-              Nouvelle Demande
-            </button>
-          )}
+          <button
+            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2 transform hover:-translate-y-0.5 duration-200"
+            onClick={() => navigate('/requests/create')}
+          >
+            <span className="material-symbols-outlined text-sm">add</span>
+            Nouvelle Demande
+          </button>
         </div>
       </div>
 
