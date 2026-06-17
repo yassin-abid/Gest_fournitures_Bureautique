@@ -106,6 +106,7 @@ const navItems: NavItem[] = [
     subItems: [
       { label: 'Utilisateurs', path: '/admin/users' },
       { label: 'Rôles & Permissions', path: '/admin/roles' },
+      { label: 'Journaux Système', path: '/admin/logs' },
       { label: 'Paramètres', path: '/admin/settings' },
     ],
   },

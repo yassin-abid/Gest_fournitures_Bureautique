@@ -28,6 +28,7 @@ import { AnalyticsPage } from '@pages/AnalyticsPage';
 import { SettingsPage } from '@pages/SettingsPage';
 import { RolesPermissionsPage } from '@pages/RolesPermissionsPage';
 import { UsersManagementPage } from '@pages/UsersManagementPage';
+import { SystemLogsPage } from '@pages/SystemLogsPage';
 import { ProfilePage } from '@pages/ProfilePage';
 
 /**
@@ -224,6 +225,14 @@ export const App: React.FC = () => {
           element={
             <ProtectedRoute requiredRole={['admin']}>
               <RolesPermissionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/logs"
+          element={
+            <ProtectedRoute requiredRole={['admin']}>
+              <SystemLogsPage />
             </ProtectedRoute>
           }
         />
