@@ -395,8 +395,8 @@ export const RequestsListPage: React.FC = () => {
             </>
           )}
 
-          {/* Employé pending actions (submitted / pending) */}
-          {user?.role === 'employe' && (row.status === 'submitted' || row.status === 'pending') && (
+          {/* Employé pending actions (submitted) */}
+          {user?.role === 'employe' && row.status === 'submitted' && (
             <>
               <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} title="Modifier la demande">
                 Modifier
