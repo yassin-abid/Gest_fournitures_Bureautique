@@ -271,9 +271,9 @@ export const RequestsListPage: React.FC = () => {
       key: 'id' as const,
       label: 'Actions',
       sortable: false,
-      width: '240px',
+      width: '300px',
       render: (_value: string, row: SupplyRequest) => (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-nowrap">
           <Button
             variant="ghost"
             size="sm"
