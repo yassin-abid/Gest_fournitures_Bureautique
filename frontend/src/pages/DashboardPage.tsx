@@ -743,6 +743,170 @@ const EmployeDashboard: React.FC = () => {
 };
 
 /* ─────────────────────────────────────────────────────────────
+   Responsable Achats Dashboard — visible to Responsable Achats role
+───────────────────────────────────────────────────────────── */
+const ResponsableAchatsDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const pendingRequests = [
+    { id: 'REQ-010', dept: 'Ressources Humaines', items: 'Fournitures de bureau standard', priority: 'high', date: 'Aujourd\'hui' },
+    { id: 'REQ-011', dept: 'Informatique', items: 'Écrans PC (x5)', priority: 'urgent', date: 'Hier' },
+    { id: 'REQ-012', dept: 'Commercial', items: 'Cartouches d\'encre', priority: 'medium', date: 'Hier' },
+  ];
+
+  const activeOrders = [
+    { id: 'ORD-042', supplier: 'Lyreco', total: '1,250 TND', status: 'pending', statusLabel: 'En attente', date: 'Aujourd\'hui' },
+    { id: 'ORD-041', supplier: 'OfficePlus', total: '450 TND', status: 'shipped', statusLabel: 'Expédiée', date: '12 Juin' },
+    { id: 'ORD-040', supplier: 'TechMarket', total: '3,200 TND', status: 'delivered', statusLabel: 'Livrée', date: '10 Juin' },
+  ];
+
+  return (
+    <MainLayout>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_cart</span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Tableau de Bord — Achats</h2>
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant">Gérez les commandes fournisseurs et traitez les demandes approuvées.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate('/orders/create')}
+            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-sm">add_shopping_cart</span>
+            Nouvelle Commande
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-surface border border-amber-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">Demandes à Traiter</p>
+            <span className="material-symbols-outlined text-amber-600 bg-amber-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
+          </div>
+          <h3 className="text-4xl font-bold text-amber-700">{pendingRequests.length}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Approuvées par les services</p>
+        </div>
+
+        <div className="bg-surface border border-blue-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Commandes en cours</p>
+            <span className="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
+          </div>
+          <h3 className="text-4xl font-bold text-blue-700">12</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Chez les fournisseurs</p>
+        </div>
+
+        <div className="bg-surface border border-emerald-200 rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Budget Dépensé (Mois)</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+          </div>
+          <h3 className="text-4xl font-bold text-emerald-700">14.5k<span className="text-lg text-emerald-600/70 ml-1">TND</span></h3>
+          <p className="text-xs text-on-surface-variant mt-1">+5% par rapport au mois dernier</p>
+        </div>
+
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-primary-fixed/20 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Fournisseurs Actifs</p>
+            <span className="material-symbols-outlined text-primary-fixed-dim bg-primary-fixed/10 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
+          </div>
+          <h3 className="text-4xl font-bold text-on-surface">8</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Catalogue régulier</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter mt-gutter">
+        {/* Demandes approuvées à traiter */}
+        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Demandes Approuvées (À traiter)</h3>
+              <p className="text-xs text-on-surface-variant">Nécessitent une commande fournisseur ou déstockage</p>
+            </div>
+            <button onClick={() => navigate('/requests')} className="text-secondary text-sm font-semibold hover:underline">
+              Voir tout →
+            </button>
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {pendingRequests.map(req => (
+              <div key={req.id} className="p-5 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-on-surface text-sm">{req.id}</span>
+                    {req.priority === 'urgent' && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase">Urgent</span>}
+                  </div>
+                  <p className="text-sm text-on-surface-variant mt-0.5">{req.dept} • {req.items}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-on-surface-variant">{req.date}</span>
+                  <button 
+                    onClick={() => navigate(`/requests/${req.id}`)} 
+                    className="px-3 py-1.5 bg-primary-fixed/20 text-primary-fixed-dim font-semibold rounded-lg text-xs hover:bg-primary-fixed/30 transition-colors"
+                  >
+                    Traiter
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Commandes en cours */}
+        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Commandes Récentes</h3>
+              <p className="text-xs text-on-surface-variant">Suivi des livraisons fournisseurs</p>
+            </div>
+            <button onClick={() => navigate('/orders')} className="text-secondary text-sm font-semibold hover:underline">
+              Voir tout →
+            </button>
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {activeOrders.map(order => (
+              <div key={order.id} className="p-5 flex items-center justify-between hover:bg-surface-container-lowest transition-colors">
+                <div>
+                  <p className="font-bold text-on-surface text-sm">{order.id}</p>
+                  <p className="text-sm text-on-surface-variant mt-0.5">{order.supplier} • {order.total}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                      order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                      'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {order.statusLabel}
+                    </span>
+                    <p className="text-xs text-on-surface-variant mt-1">{order.date}</p>
+                  </div>
+                  <button 
+                    onClick={() => navigate(`/orders/${order.id}`)} 
+                    className="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward_ios</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
    Generic Dashboard (Admin)
 ───────────────────────────────────────────────────────────── */
 export const DashboardPage: React.FC = () => {
@@ -771,6 +935,9 @@ export const DashboardPage: React.FC = () => {
   }
   if (user?.role === 'employe') {
     return <EmployeDashboard />;
+  }
+  if (user?.role === 'responsable_achats') {
+    return <ResponsableAchatsDashboard />;
   }
 
   return (
