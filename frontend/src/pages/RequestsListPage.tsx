@@ -5,14 +5,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Edit2, Trash2, Send, PackageCheck, Loader2 } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, Send, PackageCheck, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
 import { DataTable } from '@components/DataTable';
 import { SearchInput } from '@components/SearchInput';
 import { Badge } from '@components/Badge';
-import { Select } from '@components/FormInputs';
+import { Select, Input } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { Modal } from '@components/Modal';
 import { useAuth } from '@hooks/useAuth';
@@ -25,8 +25,35 @@ export const RequestsListPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [requestToReject, setRequestToReject] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
-  const mockRequests: SupplyRequest[] = [
+  const [requests, setRequests] = useState<SupplyRequest[]>([
+    {
+      id: 'req-006',
+      requestNumber: 'REQ-006',
+      userId: 'usr-emp2',
+      userName: 'Amira Belaid',
+      department: 'Ressources Humaines',
+      status: 'submitted',
+      priority: 'high',
+      items: [
+        {
+          id: 'item-006',
+          articleId: 'art-010',
+          articleName: 'Classeurs rigides',
+          quantity: 20,
+          unit: 'Pièce',
+          estimatedCost: 120.00,
+        },
+      ],
+      justification: 'Archivage des nouveaux dossiers employés',
+      estimatedBudget: 120,
+      createdAt: '2024-06-11',
+      submittedAt: '2024-06-11',
+      updatedAt: '2024-06-11',
+    },
     {
       id: 'req-001',
       requestNumber: 'REQ-001',
@@ -129,12 +156,14 @@ export const RequestsListPage: React.FC = () => {
       submittedAt: '2024-06-07',
       updatedAt: '2024-06-09',
     },
-  ];
+  ]);
 
   const filteredRequests = useMemo(() => {
-    return mockRequests.filter((request) => {
+    return requests.filter((request) => {
       // Employé: only see own requests
       if (user?.role === 'employe' && request.userId !== user?.id) return false;
+      // Responsable Service: only see requests from their department
+      if (user?.role === 'responsable_service' && request.department !== user?.department) return false;
       // Responsable Achats: only see approved requests
       if (user?.role === 'responsable_achats' && request.status !== 'approved') return false;
 
@@ -198,6 +227,22 @@ export const RequestsListPage: React.FC = () => {
       case 'low': return 'Basse';
       default: return priority;
     }
+  };
+
+  const handleApprove = (id: string) => {
+    setRequests(requests.map(req => 
+      req.id === id ? { ...req, status: 'approved', approvedBy: user?.id, approvedAt: new Date().toISOString().split('T')[0] } : req
+    ));
+  };
+
+  const handleReject = () => {
+    if (!requestToReject || !rejectReason.trim()) return;
+    setRequests(requests.map(req => 
+      req.id === requestToReject ? { ...req, status: 'rejected', rejectionReason: rejectReason } : req
+    ));
+    setRejectModalOpen(false);
+    setRequestToReject(null);
+    setRejectReason('');
   };
 
   const columns = [
@@ -282,6 +327,33 @@ export const RequestsListPage: React.FC = () => {
           >
             Voir
           </Button>
+
+          {/* Responsable Service actions */}
+          {user?.role === 'responsable_service' && row.status === 'submitted' && (
+            <>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<CheckCircle size={16} />}
+                onClick={() => handleApprove(row.id)}
+                title="Approuver la demande"
+              >
+                Approuver
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<XCircle size={16} />}
+                onClick={() => {
+                  setRequestToReject(row.id);
+                  setRejectModalOpen(true);
+                }}
+                title="Refuser la demande"
+              >
+                Refuser
+              </Button>
+            </>
+          )}
 
           {/* Responsable Achats actions on approved requests */}
           {user?.role === 'responsable_achats' && row.status === 'approved' && (
@@ -470,6 +542,28 @@ export const RequestsListPage: React.FC = () => {
         <p className="text-neutral-700">
           Êtes-vous sûr de vouloir supprimer cette demande ? Cette action est irréversible.
         </p>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal
+        isOpen={rejectModalOpen}
+        onClose={() => setRejectModalOpen(false)}
+        title="Refuser la Demande"
+        confirmText="Confirmer le refus"
+        onConfirm={handleReject}
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-700">
+            Veuillez indiquer le motif du refus. Ce motif sera notifié à l'employé.
+          </p>
+          <Input
+            label="Motif du refus (obligatoire)"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Ex: Budget insuffisant, article non justifié..."
+            required
+          />
+        </div>
       </Modal>
     </MainLayout>
   );

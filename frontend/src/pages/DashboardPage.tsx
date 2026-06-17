@@ -363,7 +363,183 @@ const GestionnaireStockDashboard: React.FC = () => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   Generic Dashboard (Admin, Employé, Responsable Service, etc.)
+   Responsable Service Dashboard — visible to Responsable de Service
+───────────────────────────────────────────────────────────── */
+const ResponsableServiceDashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const pendingRequests = [
+    { id: 'REQ-006', emp: 'Amira Belaid', items: 'Classeurs rigides', date: 'Aujourd\'hui' },
+    { id: 'REQ-007', emp: 'Sami Haddad', items: 'Cartouches d\'encre (x2)', date: 'Hier' },
+  ];
+
+  const teamMembers = [
+    { id: 'emp1', name: 'Amira Belaid', role: 'Chargée RH', requestsThisMonth: 3, lastRequest: 'En attente', avatar: 'AB' },
+    { id: 'emp2', name: 'Sami Haddad', role: 'Recruteur', requestsThisMonth: 1, lastRequest: 'Approuvée', avatar: 'SH' },
+    { id: 'emp3', name: 'Nadia Mansour', role: 'Assistante', requestsThisMonth: 5, lastRequest: 'Livrée', avatar: 'NM' },
+  ];
+
+  return (
+    <MainLayout>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-stack-lg">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Tableau de Bord — Chef de Service</h2>
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant">Gérez les demandes de votre équipe et surveillez votre budget.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate('/requests')}
+            className="px-4 py-2 font-button text-sm font-semibold text-on-secondary bg-secondary rounded-lg hover:bg-secondary/90 transition-colors shadow-sm flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-sm">fact_check</span>
+            Approuver les demandes
+          </button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">En attente d'approbation</p>
+            <span className="material-symbols-outlined text-amber-600 bg-amber-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>pending_actions</span>
+          </div>
+          <h3 className="text-4xl font-bold text-amber-600">{pendingRequests.length}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Demandes à traiter</p>
+        </div>
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Approuvées (Mois)</p>
+            <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+          </div>
+          <h3 className="text-4xl font-bold text-emerald-600">14</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Transmises aux Achats</p>
+        </div>
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-secondary/10 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Budget Alloué</p>
+            <span className="material-symbols-outlined text-secondary bg-secondary/10 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
+          </div>
+          <h3 className="text-4xl font-bold text-on-surface">1.2k<span className="text-lg text-on-surface-variant ml-1">TND</span></h3>
+          <div className="mt-2 h-1.5 bg-surface-container rounded-full overflow-hidden">
+            <div className="h-full bg-secondary w-[65%]" />
+          </div>
+          <p className="text-[10px] text-on-surface-variant mt-1">65% consommé ce trimestre</p>
+        </div>
+        <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-primary-fixed/20 rounded-full blur-xl" />
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Taille de l'équipe</p>
+            <span className="material-symbols-outlined text-primary-fixed-dim bg-primary-fixed/10 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
+          </div>
+          <h3 className="text-4xl font-bold text-on-surface">{teamMembers.length}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Employés actifs</p>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter mt-gutter">
+        {/* Team Members List */}
+        <div className="lg:col-span-2 bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface/50">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface">Mon Équipe</h3>
+              <p className="text-xs text-on-surface-variant">Historique et profils de vos collaborateurs</p>
+            </div>
+          </div>
+          <div className="divide-y divide-outline-variant/30">
+            {teamMembers.map(member => (
+              <div key={member.id} className="p-5 flex items-center gap-4 hover:bg-surface-container-lowest transition-colors">
+                <div className="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed font-bold flex items-center justify-center">
+                  {member.avatar}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-on-surface">{member.name}</h4>
+                  <p className="text-xs text-on-surface-variant">{member.role}</p>
+                </div>
+                <div className="text-right mr-4 hidden md:block">
+                  <p className="text-sm font-semibold text-on-surface">{member.requestsThisMonth}</p>
+                  <p className="text-[10px] text-on-surface-variant uppercase">Demandes (Mois)</p>
+                </div>
+                <div className="text-right mr-4 hidden sm:block">
+                  <p className="text-sm text-on-surface">{member.lastRequest}</p>
+                  <p className="text-[10px] text-on-surface-variant uppercase">Dernier Statut</p>
+                </div>
+                <button 
+                  onClick={() => navigate('/requests')} 
+                  className="px-3 py-1.5 border border-outline-variant rounded-lg text-xs font-semibold text-secondary hover:bg-secondary/5"
+                >
+                  Voir historique
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pending Approvals & Notifications */}
+        <div className="flex flex-col gap-gutter">
+          {/* Approvals */}
+          <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden">
+            <div className="p-4 border-b border-outline-variant bg-surface-container-lowest flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>notification_important</span>
+              <h3 className="text-sm font-semibold text-on-surface">Approbations Requises</h3>
+            </div>
+            <div className="p-2">
+              {pendingRequests.map(req => (
+                <div key={req.id} className="p-3 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer border border-transparent hover:border-outline-variant/50">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-xs font-bold text-on-surface">{req.id}</span>
+                    <span className="text-[10px] text-on-surface-variant">{req.date}</span>
+                  </div>
+                  <p className="text-sm text-on-surface font-medium">{req.emp}</p>
+                  <p className="text-xs text-on-surface-variant truncate">{req.items}</p>
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => navigate('/requests')} className="flex-1 py-1 bg-secondary text-on-secondary rounded text-xs font-semibold hover:bg-secondary/90">
+                      Examiner
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Notifications */}
+          <div className="bg-surface border border-outline-variant rounded-xl soft-shadow p-5">
+            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
+              Notifications du Service
+            </h3>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <span className="w-2 h-2 rounded-full bg-secondary mt-1.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-on-surface">Nouvelle demande soumise par <span className="font-medium">Amira Belaid</span>.</p>
+                  <p className="text-[10px] text-on-surface-variant mt-0.5">Il y a 2 heures</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                <div>
+                  <p className="text-sm text-on-surface">Commande <span className="font-medium">ORD-109</span> (Ressources Humaines) a été livrée.</p>
+                  <p className="text-[10px] text-on-surface-variant mt-0.5">Hier</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   Generic Dashboard (Admin, Employé)
 ───────────────────────────────────────────────────────────── */
 export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -385,6 +561,9 @@ export const DashboardPage: React.FC = () => {
   // ── Role-specific dashboard ──
   if (user?.role === 'gestionnaire_stock') {
     return <GestionnaireStockDashboard />;
+  }
+  if (user?.role === 'responsable_service') {
+    return <ResponsableServiceDashboard />;
   }
 
   return (
