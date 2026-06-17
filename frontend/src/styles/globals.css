@@ -1,0 +1,137 @@
+/**
+ * Styles - Global CSS
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Material Symbols config */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Custom Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid theme('colors.outline-variant');
+}
+
+.soft-shadow {
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+/* Input specific focus styling based on rules */
+.premium-input:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+
+/* Primary button specific styling */
+.btn-primary {
+  background-color: #0F172A; /* Deep Navy */
+  color: #ffffff;
+  transition: all 300ms ease-in-out;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4); /* Royal Blue glow */
+}
+
+/* Focus ring */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2;
+}
+
+/* Table styles */
+.table-striped tbody tr:nth-child(odd) {
+  @apply bg-surface-container-lowest;
+}
+
+/* Form styles */
+.form-group {
+  @apply mb-6;
+}
+
+.form-label {
+  @apply block font-label-md text-label-md text-on-surface-variant mb-2;
+}
+
+/* Utility classes */
+.truncate-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-2-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.truncate-3-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

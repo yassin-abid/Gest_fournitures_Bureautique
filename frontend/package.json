@@ -1,0 +1,52 @@
+{
+  "name": "office-supplies-management-frontend",
+  "version": "1.0.0",
+  "description": "Professional frontend for Office Supplies Management System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
+  },
+  "keywords": [
+    "office",
+    "supplies",
+    "management",
+    "react",
+    "typescript",
+    "tailwind"
+  ],
+  "author": "Office Supplies Management Team",
+  "license": "MIT",
+  "dependencies": {
+    "@tanstack/react-query": "^5.101.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.0",
+    "@typescript-eslint/parser": "^8.61.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "axios": "^1.17.0",
+    "date-fns": "^4.4.0",
+    "eslint": "^10.4.1",
+    "lucide-react": "^1.17.0",
+    "postcss": "^8.5.15",
+    "prettier": "^3.8.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.17.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.11",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "tailwindcss": "^3.4.19"
+  }
+}
