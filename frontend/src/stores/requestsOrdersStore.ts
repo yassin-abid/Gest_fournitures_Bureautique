@@ -17,14 +17,14 @@ interface RequestsOrdersState {
   setRequests: (requests: SupplyRequest[]) => void;
   addRequest: (request: SupplyRequest) => void;
   updateRequest: (request: SupplyRequest) => void;
-  deleteRequest: (id: string) => void;
+  deleteRequest: (id: number) => void;
   setSelectedRequest: (request: SupplyRequest | null) => void;
 
   // Order Actions
   setOrders: (orders: Order[]) => void;
   addOrder: (order: Order) => void;
   updateOrder: (order: Order) => void;
-  deleteOrder: (id: string) => void;
+  deleteOrder: (id: number) => void;
   setSelectedOrder: (order: Order | null) => void;
 
   setLoading: (loading: boolean) => void;
@@ -49,7 +49,7 @@ export const useRequestsOrdersStore = create<RequestsOrdersState>((set) => ({
       requests: state.requests.map((r) => (r.id === request.id ? request : r)),
       selectedRequest: state.selectedRequest?.id === request.id ? request : state.selectedRequest,
     })),
-  deleteRequest: (id) =>
+  deleteRequest: (id: number) =>
     set((state) => ({
       requests: state.requests.filter((r) => r.id !== id),
       selectedRequest: state.selectedRequest?.id === id ? null : state.selectedRequest,

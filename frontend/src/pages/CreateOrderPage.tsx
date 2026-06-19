@@ -3,16 +3,21 @@
  * Form to create new purchase order
  */
 
-import React, { useState } from 'react';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody, CardFooter } from '@components/Card';
 import { Button } from '@components/Button';
 import { Input, Select, Textarea } from '@components/FormInputs';
+import { ordersService } from '@services/ordersService';
+import { catalogService } from '@services/catalogService';
+import { requestsService } from '@services/requestsService';
+import type { Supplier, Article } from '@/types/catalog';
 
-interface OrderItem {
-  id: string;
-  articleId: string;
+interface OrderItemUI {
+  id: string; // purely for UI mapping
+  articleId: number;
   articleName: string;
   quantity: number;
   unitPrice: number;
@@ -21,33 +26,84 @@ interface OrderItem {
 }
 
 export const CreateOrderPage: React.FC = () => {
-  const [supplier, setSupplier] = useState('');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestId = searchParams.get('requestId');
+
+  const [supplierId, setSupplierId] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('Net 30');
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState<OrderItem[]>([]);
+  
+  const [items, setItems] = useState<OrderItemUI[]>([]);
+  
   const [newItemArticle, setNewItemArticle] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemNotes, setNewItemNotes] = useState('');
 
-  const mockSuppliers = [
-    { value: 'sup-001', label: 'Office Pro' },
-    { value: 'sup-002', label: 'Supplies Plus' },
-    { value: 'sup-003', label: 'Tech Store' },
-  ];
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockArticles = [
-    { value: 'art-001', label: 'A4 Paper (500 sheets) - €5.99' },
-    { value: 'art-002', label: 'Ballpoint Pen (Blue) - €12.50' },
-    { value: 'art-003', label: 'File Folder (Yellow) - €8.75' },
-    { value: 'art-004', label: 'Stapler (Desktop) - €25.00' },
-    { value: 'art-005', label: 'Notebook (Ruled) - €3.50' },
-  ];
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [suppRes, artRes] = await Promise.all([
+          catalogService.getSuppliers(1, 100),
+          catalogService.getArticles(1, 1000)
+        ]);
+        setSuppliers(suppRes.data);
+        setArticles(artRes.data);
 
-  const getArticleName = (articleId: string) => {
-    const article = mockArticles.find((a) => a.value === articleId);
-    return article?.label?.split(' - ')[0] || '';
+        // Si on vient d'une demande, on pré-remplit les articles
+        if (requestId) {
+          const reqData = await requestsService.getRequestById(Number(requestId));
+          if (reqData && reqData.items) {
+            const prefilledItems = reqData.items.map(item => {
+              const articleInfo = artRes.data.find(a => a.id === item.articleId);
+              const qty = item.approvedQuantity || item.quantity;
+              const unitPrice = articleInfo?.unitPrice || 0;
+              return {
+                id: `item-${Date.now()}-${item.articleId}`,
+                articleId: item.articleId,
+                articleName: articleInfo?.name || item.articleName || 'Article Inconnu',
+                quantity: qty,
+                unitPrice: unitPrice,
+                totalPrice: qty * unitPrice,
+                notes: item.notes || ''
+              };
+            });
+            setItems(prefilledItems);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur chargement données:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    initData();
+  }, [requestId]);
+
+  const getArticleName = (id: number) => {
+    const article = articles.find((a) => a.id === id);
+    return article?.name || '';
+  };
+
+  const getArticlePrice = (id: number) => {
+    const article = articles.find((a) => a.id === id);
+    return article?.unitPrice || 0;
+  };
+
+  const handleArticleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setNewItemArticle(id);
+    if (id) {
+      setNewItemPrice(getArticlePrice(Number(id)).toString());
+    } else {
+      setNewItemPrice('');
+    }
   };
 
   const addItem = () => {
@@ -60,10 +116,10 @@ export const CreateOrderPage: React.FC = () => {
     const unitPrice = parseFloat(newItemPrice);
     const totalPrice = quantity * unitPrice;
 
-    const newItem: OrderItem = {
+    const newItem: OrderItemUI = {
       id: `item-${Date.now()}`,
-      articleId: newItemArticle,
-      articleName: getArticleName(newItemArticle),
+      articleId: Number(newItemArticle),
+      articleName: getArticleName(Number(newItemArticle)),
       quantity,
       unitPrice,
       totalPrice,
@@ -83,12 +139,8 @@ export const CreateOrderPage: React.FC = () => {
 
   const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
-  const handleSaveDraft = () => {
-    alert('Commande enregistrée comme brouillon');
-  };
-
-  const handleSubmit = () => {
-    if (!supplier) {
+  const handleSubmit = async () => {
+    if (!supplierId) {
       alert('Veuillez sélectionner un fournisseur');
       return;
     }
@@ -96,29 +148,55 @@ export const CreateOrderPage: React.FC = () => {
       alert('Veuillez ajouter au moins un article');
       return;
     }
-    alert('Commande créée avec succès');
+    
+    try {
+      await ordersService.createOrder({
+        requestId: requestId ? Number(requestId) : undefined,
+        supplierId: Number(supplierId),
+        paymentTerms,
+        expectedDeliveryDate: deliveryDate || undefined,
+        notes,
+        items: items.map(i => ({
+          articleId: i.articleId,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          notes: i.notes
+        }))
+      });
+      alert('Commande créée avec succès !');
+      navigate('/orders');
+    } catch (e: any) {
+      const detail = (e as any)?.details ? JSON.stringify((e as any).details) : '';
+      alert("Erreur : " + e.message + (detail ? '\n' + detail : ''));
+    }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout title="Créer un Bon de Commande">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="animate-spin text-primary-500" size={48} />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout title="Créer un Bon de Commande">
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<ArrowLeft size={20} />}
-            onClick={() => window.history.back()}
-          >
+          <Button variant="ghost" size="sm" icon={<ArrowLeft size={20} />} onClick={() => navigate(-1)}>
             Retour
           </Button>
           <div>
             <h2 className="text-3xl font-bold text-neutral-900">Créer un Bon de Commande</h2>
-            <p className="text-neutral-600 mt-2">Remplissez le formulaire ci-dessous pour créer une nouvelle commande</p>
+            {requestId && (
+              <p className="text-primary-600 mt-1 font-medium">Pré-remplie depuis la demande N°{requestId}</p>
+            )}
+            <p className="text-neutral-600 mt-2">Remplissez le formulaire ci-dessous pour créer une nouvelle commande.</p>
           </div>
         </div>
 
-        {/* Order Form */}
         <Card>
           <CardHeader title="Détails de la Commande" />
           <CardBody>
@@ -126,9 +204,12 @@ export const CreateOrderPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Select
                   label="Fournisseur *"
-                  options={[{ value: '', label: 'Sélectionner un fournisseur' }, ...mockSuppliers]}
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
+                  options={[
+                    { value: '', label: 'Sélectionner un fournisseur' },
+                    ...suppliers.map(s => ({ value: s.id.toString(), label: s.name }))
+                  ]}
+                  value={supplierId}
+                  onChange={(e) => setSupplierId(e.target.value)}
                 />
                 <Input
                   label="Date de Livraison Prévue"
@@ -158,7 +239,6 @@ export const CreateOrderPage: React.FC = () => {
           </CardBody>
         </Card>
 
-        {/* Add Items Section */}
         <Card>
           <CardHeader title="Ajouter des Articles" />
           <CardBody>
@@ -166,9 +246,12 @@ export const CreateOrderPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="Article *"
-                  options={[{ value: '', label: 'Sélectionner un article' }, ...mockArticles]}
+                  options={[
+                    { value: '', label: 'Sélectionner un article' },
+                    ...articles.map(a => ({ value: a.id.toString(), label: a.name }))
+                  ]}
                   value={newItemArticle}
-                  onChange={(e) => setNewItemArticle(e.target.value)}
+                  onChange={handleArticleSelect}
                 />
                 <Input
                   label="Quantité *"
@@ -198,46 +281,30 @@ export const CreateOrderPage: React.FC = () => {
                 />
               </div>
 
-              <Button
-                variant="primary"
-                icon={<Plus size={20} />}
-                onClick={addItem}
-                fullWidth
-              >
+              <Button variant="primary" icon={<Plus size={20} />} onClick={addItem} fullWidth>
                 Ajouter l'Article
               </Button>
             </div>
           </CardBody>
         </Card>
 
-        {/* Items List */}
         {items.length > 0 && (
           <Card>
             <CardHeader title={`Articles (${items.length})`} />
             <CardBody>
               <div className="space-y-3">
                 {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50"
-                  >
+                  <div key={item.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50">
                     <div className="flex-1">
                       <p className="font-medium text-neutral-900">{item.articleName}</p>
                       <div className="flex items-center gap-4 mt-1 text-sm text-neutral-600">
                         <span>Qté : {item.quantity}</span>
-                        <span>Prix unitaire : €{item.unitPrice.toFixed(2)}</span>
-                        <span className="font-semibold text-neutral-900">
-                          Total : €{item.totalPrice.toFixed(2)}
-                        </span>
+                        <span>Prix unitaire : {item.unitPrice.toFixed(2)} DH</span>
+                        <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} DH</span>
                         {item.notes && <span className="italic">{item.notes}</span>}
                       </div>
                     </div>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      icon={<Trash2 size={16} />}
-                      onClick={() => removeItem(item.id)}
-                    />
+                    <Button variant="danger" size="sm" icon={<Trash2 size={16} />} onClick={() => removeItem(item.id)} />
                   </div>
                 ))}
               </div>
@@ -245,29 +312,17 @@ export const CreateOrderPage: React.FC = () => {
               <div className="border-t border-neutral-200 mt-4 pt-4">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-neutral-900">Montant Total :</span>
-                  <span className="text-2xl font-bold text-primary-600">
-                    €{totalAmount.toFixed(2)}
-                  </span>
+                  <span className="text-2xl font-bold text-primary-600">{totalAmount.toFixed(2)} DH</span>
                 </div>
               </div>
             </CardBody>
           </Card>
         )}
 
-        {/* Actions */}
         <Card>
           <CardFooter>
-            <Button variant="ghost" onClick={() => window.history.back()}>
-              Annuler
-            </Button>
-            <Button variant="secondary" onClick={handleSaveDraft}>
-              Enregistrer comme Brouillon
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSubmit}
-              disabled={!supplier || items.length === 0}
-            >
+            <Button variant="ghost" onClick={() => navigate(-1)}>Annuler</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={!supplierId || items.length === 0}>
               Créer la Commande
             </Button>
           </CardFooter>

@@ -196,37 +196,17 @@ export const LoginPage: React.FC = () => {
           </a>
         </div>
 
-        {/* Quick Role Testing Panel */}
+        {/* Legal Control Message */}
         <div className="mt-8 pt-6 border-t border-outline-variant/30">
-          <p className="text-xs text-on-surface-variant mb-3 text-center font-semibold uppercase tracking-wider">
-            Accès rapide — Tester les rôles
+          <p className="text-[11px] leading-relaxed text-on-surface-variant/70 text-center uppercase tracking-widest font-semibold mb-2">
+            Contrôle des données & Sécurité
           </p>
-          <div className="grid grid-cols-1 gap-2">
-            {[
-              { label: '🛡 Administrateur',    email: 'admin@hammemi.com',              pass: 'Admin123!' },
-              { label: '✅ Resp. de Service',   email: 'resp.service@hammemi.com',       pass: 'Service123!' },
-              { label: '📦 Gest. de Stock',     email: 'gestionnaire.stock@hammemi.com', pass: 'Stock123!' },
-              { label: '🛒 Resp. Achats',       email: 'resp.achats@hammemi.com',        pass: 'Achats123!' },
-              { label: '👤 Employé',            email: 'employe@hammemi.com',            pass: 'Employe123!' },
-            ].map(({ label, email, pass }) => (
-              <button
-                key={email}
-                disabled={isLoading}
-                onClick={async () => {
-                  setFormData({ email, password: pass });
-                  try {
-                    await login(email, pass);
-                    navigate('/dashboard');
-                  } catch (err: any) {
-                    showError(err.message || 'La connexion a échoué');
-                  }
-                }}
-                className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low hover:bg-surface-container border border-outline-variant rounded-lg transition-colors text-left group"
-              >
-                <span className="text-sm font-semibold text-on-surface">{label}</span>
-                <span className="text-[10px] font-mono text-on-surface-variant/60 group-hover:text-on-surface-variant transition-colors">{email}</span>
-              </button>
-            ))}
+          <div className="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/30">
+            <p className="text-xs text-on-surface-variant text-center leading-relaxed">
+              L'accès à cette plateforme est strictement réservé au personnel autorisé de Hammemi Office.
+              Toute tentative d'accès non autorisé, modification ou extraction de données est consignée et peut faire l'objet de poursuites judiciaires. 
+              Vos données de connexion et d'accès sont sous la responsabilité de l'administration système.
+            </p>
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ export const requestsService = {
   },
 
   // Get request by ID
-  getRequestById: async (id: string): Promise<SupplyRequest> => {
+  getRequestById: async (id: number): Promise<SupplyRequest> => {
     const response = await apiClient.get<SupplyRequest>(`/requests/${id}`);
     return response.data;
   },
@@ -32,37 +32,37 @@ export const requestsService = {
   },
 
   // Update request
-  updateRequest: async (id: string, data: Partial<CreateRequestRequest>): Promise<SupplyRequest> => {
+  updateRequest: async (id: number, data: Partial<CreateRequestRequest>): Promise<SupplyRequest> => {
     const response = await apiClient.put<SupplyRequest>(`/requests/${id}`, data);
     return response.data;
   },
 
   // Submit request
-  submitRequest: async (id: string): Promise<SupplyRequest> => {
+  submitRequest: async (id: number): Promise<SupplyRequest> => {
     const response = await apiClient.post<SupplyRequest>(`/requests/${id}/submit`, {});
     return response.data;
   },
 
   // Approve request
-  approveRequest: async (id: string, notes?: string): Promise<SupplyRequest> => {
+  approveRequest: async (id: number, notes?: string): Promise<SupplyRequest> => {
     const response = await apiClient.post<SupplyRequest>(`/requests/${id}/approve`, { notes });
     return response.data;
   },
 
   // Reject request
-  rejectRequest: async (id: string, reason: string): Promise<SupplyRequest> => {
+  rejectRequest: async (id: number, reason: string): Promise<SupplyRequest> => {
     const response = await apiClient.post<SupplyRequest>(`/requests/${id}/reject`, { reason });
     return response.data;
   },
 
   // Cancel request
-  cancelRequest: async (id: string): Promise<SupplyRequest> => {
+  cancelRequest: async (id: number): Promise<SupplyRequest> => {
     const response = await apiClient.post<SupplyRequest>(`/requests/${id}/cancel`, {});
     return response.data;
   },
 
   // Delete request
-  deleteRequest: async (id: string): Promise<void> => {
+  deleteRequest: async (id: number): Promise<void> => {
     await apiClient.delete(`/requests/${id}`);
   },
 };

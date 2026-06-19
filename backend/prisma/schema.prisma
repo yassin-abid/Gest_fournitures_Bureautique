@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StockAlert {
+  id           Int       @id @default(autoincrement())
+  articleId    Int       @map("article_id")
+  minStock     Int?      @map("seuil")
+  currentStock Int?      @map("quantite_actuelle")
+  dateAlerte   DateTime? @default(now()) @map("date_alerte") @db.Timestamp(6)
+  status       String?   @default("active") @map("statut") @db.VarChar(20)
+  article      Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("alertes_stock")
+}
+
+model AnomaliesConsommation {
+  id            Int                 @id @default(autoincrement())
+  articleId     Int                 @map("article_id")
+  serviceId     Int                 @map("service_id")
+  description   String?
+  niveauRisque  niveau_risque_enum? @map("niveau_risque")
+  dateDetection DateTime?           @default(now()) @map("date_detection") @db.Timestamp(6)
+  article       Article             @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  service       Service             @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("anomalies_consommation")
+}
+
+model Article {
+  id             Int                     @id @default(autoincrement())
+  code           String                  @unique @map("reference") @db.VarChar(50)
+  name           String                  @map("designation") @db.VarChar(150)
+  description    String?
+  categoryId     Int?                    @map("categorie_id")
+  unit           String?                 @map("unite_mesure") @db.VarChar(30)
+  quantity       Int?                    @default(0) @map("stock_actuel")
+  minStock       Int?                    @default(0) @map("stock_minimum")
+  maxStock       Int?                    @default(0) @map("stock_maximum")
+  unitPrice      Float?                  @map("prix_unitaire") @db.Real
+  location       String?                 @map("emplacement") @db.VarChar(50)
+  isActive       Boolean?                @default(true) @map("actif")
+  stockAlerts    StockAlert[]
+  anomalies      AnomaliesConsommation[]
+  category       Category?               @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inventaires    Inventaire[]
+  orderItems     OrderItem[]
+  requestItems   RequestItem[]
+  stockMovements StockMovement[]
+  previsions     PrevisionsAchats[]
+  tarifs         Tarif[]
+
+  @@map("articles")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @map("nom") @db.VarChar(100)
+  description String?
+  articles    Article[]
+
+  @@map("categories")
+}
+
+model Order {
+  id               Int         @id @default(autoincrement())
+  orderNumber      String      @unique @map("numero") @db.VarChar(30)
+  supplierId       Int         @map("fournisseur_id")
+  buyerId          Int         @map("responsable_achat_id")
+  orderDate        DateTime?   @default(now()) @map("date_commande") @db.Timestamp(6)
+  status           String?     @default("en_attente") @map("statut") @db.VarChar(20)
+  expectedDelivery DateTime?   @map("date_livraison_prevue") @db.Date
+  actualDelivery   DateTime?   @map("date_livraison_reelle") @db.Date
+  supplier         Supplier    @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  buyer            User        @relation(fields: [buyerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  requestId        Int?        @map("demande_id")
+  request          SupplyRequest? @relation("OrderToRequest", fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items            OrderItem[]
+
+  @@map("commandes")
+}
+
+model SupplyRequest {
+  id              Int           @id @default(autoincrement())
+  requestNumber   String        @unique @map("numero") @db.VarChar(30)
+  requesterId     Int           @map("demandeur_id")
+  serviceId       Int           @map("service_id")
+  approverId      Int?          @map("responsable_service_id")
+  requestDate     DateTime?     @default(now()) @map("date_demande") @db.Timestamp(6)
+  status          String?       @default("en_attente") @map("statut") @db.VarChar(20)
+  priority        String?       @default("normale") @map("priorite") @db.VarChar(20)
+  justification   String?       @map("commentaire_employe")
+  rejectionReason String?       @map("commentaire_refus")
+  requester       User          @relation("RequesterRelation", fields: [requesterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approver        User?         @relation("ApproverRelation", fields: [approverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  service         Service       @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items           RequestItem[]
+  validations     Validation[]
+  orders          Order[]       @relation("OrderToRequest")
+
+  @@map("demandes")
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String    @map("nom") @db.VarChar(100)
+  contact   String?   @db.VarChar(100)
+  email     String?   @db.VarChar(100)
+  phone     String?   @map("telephone") @db.VarChar(20)
+  address   String?   @map("adresse") @db.VarChar(200)
+  createdAt DateTime? @default(now()) @map("date_creation") @db.Timestamp(6)
+  orders    Order[]
+  tarifs    Tarif[]
+
+  @@map("fournisseurs")
+}
+
+model Inventaire {
+  id             Int       @id @default(autoincrement())
+  articleId      Int       @map("article_id")
+  userId         Int       @map("utilisateur_id")
+  dateInventaire DateTime? @default(now()) @map("date_inventaire") @db.Timestamp(6)
+  stockTheorique Int       @map("stock_theorique")
+  stockReel      Int       @map("stock_reel")
+  ecart          Int?      @default(dbgenerated("(stock_reel - stock_theorique)"))
+  commentaire    String?
+  article        Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("inventaires")
+}
+
+model AuditLog {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("utilisateur_id")
+  action    String?   @db.VarChar(100)
+  details   String?   @map("description")
+  ipAddress String?   @map("adresse_ip") @db.VarChar(45)
+  timestamp DateTime? @default(now()) @map("date_action") @db.Timestamp(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("journaux_activite")
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int     @map("commande_id")
+  articleId Int     @map("article_id")
+  quantity  Int     @map("quantite_commandee")
+  received  Int?    @default(0) @map("quantite_recue")
+  unitPrice Float?  @map("prix_unitaire") @db.Real
+  article   Article @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("lignes_commande")
+}
+
+model RequestItem {
+  id               Int           @id @default(autoincrement())
+  requestId        Int           @map("demande_id")
+  articleId        Int           @map("article_id")
+  quantity         Int           @map("quantite_demandee")
+  approvedQuantity Int?          @map("quantite_accordee")
+  article          Article       @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  request          SupplyRequest @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("lignes_demande")
+}
+
+model StockMovement {
+  id            Int       @id @default(autoincrement())
+  articleId     Int       @map("article_id")
+  userId        Int       @map("utilisateur_id")
+  type          String    @map("type_mouvement") @db.VarChar(20)
+  quantity      Int       @map("quantite")
+  previousStock Int       @map("stock_avant")
+  newStock      Int       @map("stock_apres")
+  reason        String?   @map("motif") @db.VarChar(150)
+  reference     String?   @map("reference_doc") @db.VarChar(30)
+  date          DateTime? @default(now()) @map("date_mouvement") @db.Timestamp(6)
+  article       Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("mouvements_stock")
+}
+
+model Notification {
+  id      Int       @id @default(autoincrement())
+  userId  Int       @map("utilisateur_id")
+  title   String?   @map("titre") @db.VarChar(150)
+  message String?
+  isRead  Boolean?  @default(false) @map("lu")
+  date    DateTime? @default(now()) @map("date_notification") @db.Timestamp(6)
+  user    User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("notifications")
+}
+
+model PrevisionsAchats {
+  id             Int       @id @default(autoincrement())
+  articleId      Int       @map("article_id")
+  moisPrevision  DateTime? @map("mois_prevision") @db.Date
+  quantitePrevue Int?      @map("quantite_prevue")
+  quantiteRecom  Int?      @map("quantite_recommandee")
+  scorePriorite  Float?    @map("score_priorite") @db.Real
+  modeleIa       String?   @map("modele_ia_version") @db.VarChar(20)
+  dateGeneration DateTime? @default(now()) @map("date_generation") @db.Timestamp(6)
+  article        Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("previsions_achats")
+}
+
+model Role {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique @map("nom_role") @db.VarChar(50)
+  description String?
+  users       User[]
+
+  @@map("roles")
+}
+
+model Service {
+  id        Int                     @id @default(autoincrement())
+  name      String                  @map("nom_service") @db.VarChar(100)
+  managerId Int?                    @map("responsable_id")
+  anomalies AnomaliesConsommation[]
+  requests  SupplyRequest[]
+  users     User[]
+
+  @@map("services")
+}
+
+model Tarif {
+  id           Int       @id @default(autoincrement())
+  articleId    Int       @map("article_id")
+  supplierId   Int       @map("fournisseur_id")
+  price        Float?    @map("prix") @db.Real
+  deliveryTime Int?      @map("delai_livraison")
+  startDate    DateTime? @map("date_debut") @db.Date
+  endDate      DateTime? @map("date_fin") @db.Date
+  article      Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  supplier     Supplier  @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tarifs")
+}
+
+model User {
+  id               Int             @id @default(autoincrement())
+  lastName         String          @map("nom") @db.VarChar(50)
+  firstName        String          @map("prenom") @db.VarChar(50)
+  email            String          @unique @db.VarChar(100)
+  passwordHash     String          @map("mot_de_passe") @db.VarChar(255)
+  roleId           Int             @map("role_id")
+  serviceId        Int?            @map("service_id")
+  isActive         Boolean?        @default(true) @map("actif")
+  createdAt        DateTime?       @default(now()) @map("date_creation") @db.Timestamp(6)
+  lastLogin        DateTime?       @map("derniere_connexion") @db.Timestamp(6)
+  orders           Order[]
+  requests         SupplyRequest[] @relation("RequesterRelation")
+  approvedRequests SupplyRequest[] @relation("ApproverRelation")
+  inventaires      Inventaire[]
+  auditLogs        AuditLog[]
+  stockMovements   StockMovement[]
+  notifications    Notification[]
+  role             Role            @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  service          Service?        @relation(fields: [serviceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  validations      Validation[]
+
+  @@map("users")
+}
+
+model Validation {
+  id         Int           @id @default(autoincrement())
+  requestId  Int           @map("demande_id")
+  approverId Int           @map("responsable_id")
+  step       Int?          @default(1) @map("etape_validation") @db.SmallInt
+  decision   String?       @db.VarChar(20)
+  comment    String?       @map("commentaire")
+  date       DateTime?     @default(now()) @map("date_validation") @db.Timestamp(6)
+  request    SupplyRequest @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approver   User          @relation(fields: [approverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("validations")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model SystemSettings {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+enum niveau_risque_enum {
+  faible
+  moyen
+  lev_   @map("élevé")
+}

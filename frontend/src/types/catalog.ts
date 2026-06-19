@@ -3,13 +3,13 @@
  */
 
 export interface Article {
-  id: string;
+  id: number;
   code: string;
   name: string;
   description?: string;
-  categoryId: string;
+  categoryId: number;
   categoryName?: string;
-  supplierId: string;
+  supplierId: number;
   supplierName?: string;
   unit: string;
   unitPrice: number;
@@ -23,7 +23,7 @@ export interface Article {
 }
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   code?: string;
@@ -34,7 +34,7 @@ export interface Category {
 }
 
 export interface Supplier {
-  id: string;
+  id: number;
   name: string;
   code: string;
   email: string;
@@ -53,12 +53,14 @@ export interface CreateArticleRequest {
   code: string;
   name: string;
   description?: string;
-  categoryId: string;
-  supplierId: string;
+  categoryId: number;
+  supplierId: number;
   unit: string;
   unitPrice: number;
+  quantity: number;
   minStock: number;
   maxStock: number;
+  status?: 'active' | 'inactive';
 }
 
 export interface UpdateArticleRequest extends Partial<CreateArticleRequest> {}

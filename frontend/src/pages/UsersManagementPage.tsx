@@ -3,8 +3,8 @@
  * Manage users and permissions
  */
 
-import React, { useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Lock } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Plus, Edit2, Trash2, Lock, CheckCircle, XCircle } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -13,99 +13,50 @@ import { SearchInput } from '@components/SearchInput';
 import { Badge } from '@components/Badge';
 import { Input, Select } from '@components/FormInputs';
 import { Modal } from '@components/Modal';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  status: 'active' | 'inactive';
-  lastLogin?: string;
-  createdAt: string;
-}
+import { adminService } from '@services/adminService';
+import type { User } from '@/types/auth';
 
 export const UsersManagementPage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const mockUsers: User[] = [
-    {
-      id: 'user-001',
-      name: 'Karim Administrateur',
-      email: 'admin@hammemi.com',
-      role: 'Administrateur',
-      department: 'Informatique',
-      status: 'active',
-      lastLogin: '2024-06-10 14:30',
-      createdAt: '2024-01-01',
-    },
-    {
-      id: 'user-002',
-      name: 'Sonia Ben Ali',
-      email: 'resp.service@hammemi.com',
-      role: 'Responsable de Service',
-      department: 'Ressources Humaines',
-      status: 'active',
-      lastLogin: '2024-06-10 09:15',
-      createdAt: '2024-01-10',
-    },
-    {
-      id: 'user-003',
-      name: 'Mourad Gharbi',
-      email: 'gestionnaire.stock@hammemi.com',
-      role: 'Gestionnaire de Stock',
-      department: 'Logistique',
-      status: 'active',
-      lastLogin: '2024-06-10 08:00',
-      createdAt: '2024-01-15',
-    },
-    {
-      id: 'user-004',
-      name: 'Leila Mansour',
-      email: 'resp.achats@hammemi.com',
-      role: 'Responsable Achats',
-      department: 'Achats & Finance',
-      status: 'active',
-      lastLogin: '2024-06-09 16:45',
-      createdAt: '2024-02-01',
-    },
-    {
-      id: 'user-005',
-      name: 'Youssef Trabelsi',
-      email: 'employe@hammemi.com',
-      role: 'Employé',
-      department: 'Commercial',
-      status: 'active',
-      lastLogin: '2024-06-10 10:30',
-      createdAt: '2024-03-01',
-    },
-  ];
+  const [formData, setFormData] = useState<any>({});
+
+  const fetchUsers = async () => {
+    try {
+      const res = await adminService.getUsers(1, 100, selectedRole, searchTerm);
+      setUsers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [selectedRole, searchTerm]);
 
   const filteredUsers = useMemo(() => {
-    return mockUsers.filter((user) => {
-      const matchesSearch =
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = !selectedRole || user.role === selectedRole;
-      const matchesStatus = !selectedStatus || user.status === selectedStatus;
-      return matchesSearch && matchesRole && matchesStatus;
+    return users.filter((u) => {
+      const matchesStatus = !selectedStatus || u.status === selectedStatus;
+      return matchesStatus;
     });
-  }, [searchTerm, selectedRole, selectedStatus]);
+  }, [users, selectedStatus]);
 
   const columns = [
     {
-      key: 'name' as const,
+      key: 'email' as const,
       label: 'Nom',
       sortable: true,
-      render: (value: string, row: User) => (
+      render: (_value: string, row: User) => (
         <div>
-          <p className="font-medium text-neutral-900">{value}</p>
+          <p className="font-medium text-neutral-900">{row.firstName} {row.lastName}</p>
           <p className="text-sm text-neutral-600">{row.email}</p>
         </div>
       ),
@@ -121,13 +72,20 @@ export const UsersManagementPage: React.FC = () => {
       sortable: true,
       render: (value: string) => {
         const variantMap: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
-          'Administrateur':        'danger',
-          'Responsable de Service':'warning',
-          'Gestionnaire de Stock': 'info',
-          'Responsable Achats':    'success',
-          'Employé':               'primary' as any,
+          'admin': 'danger',
+          'responsable_service': 'warning',
+          'gestionnaire_stock': 'info',
+          'responsable_achats': 'success',
+          'employe': 'primary' as any,
         };
-        return <Badge variant={variantMap[value] ?? 'info'}>{value}</Badge>;
+        const labelMap: Record<string, string> = {
+          'admin': 'Administrateur',
+          'responsable_service': 'Responsable de Service',
+          'gestionnaire_stock': 'Gestionnaire de Stock',
+          'responsable_achats': 'Responsable Achats',
+          'employe': 'Employé',
+        };
+        return <Badge variant={variantMap[value] ?? 'info'}>{labelMap[value] || value}</Badge>;
       },
     },
     {
@@ -141,10 +99,10 @@ export const UsersManagementPage: React.FC = () => {
       ),
     },
     {
-      key: 'lastLogin' as const,
+      key: 'updatedAt' as const,
       label: 'Dernière Connexion',
       sortable: true,
-      render: (value: string) => <span className="text-neutral-600">{value || 'Jamais'}</span>,
+      render: (_value: string, row: User) => <span className="text-neutral-600">{row.updatedAt && row.updatedAt !== row.createdAt ? new Date(row.updatedAt).toLocaleDateString() : 'Jamais'}</span>,
     },
     {
       key: 'id' as const,
@@ -153,38 +111,92 @@ export const UsersManagementPage: React.FC = () => {
       width: '250px',
       render: (_value: string, row: User) => (
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Edit2 size={16} />}
-            onClick={() => {
-              setSelectedUser(row);
-              setIsEditModalOpen(true);
-            }}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Lock size={16} />}
-            onClick={() => {
-              setSelectedUser(row);
-              setIsResetPasswordModalOpen(true);
-            }}
-          />
-          <Button
-            variant="danger"
-            size="sm"
-            icon={<Trash2 size={16} />}
-          />
+          {row.status === 'inactive' ? (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<CheckCircle size={16} />}
+                onClick={async () => {
+                  try {
+                    await adminService.activateUser(row.id.toString());
+                    fetchUsers();
+                  } catch (e: any) {
+                    alert("Erreur lors de l'activation: " + e.message);
+                  }
+                }}
+                title="Approuver l'utilisateur"
+              >
+                Approuver
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<XCircle size={16} />}
+                onClick={async () => {
+                  if (confirm('Êtes-vous sûr de vouloir refuser cette demande ? Le compte sera supprimé.')) {
+                    try {
+                      await adminService.hardDeleteUser(row.id.toString());
+                      fetchUsers();
+                    } catch (e: any) {
+                      alert("Erreur lors de la suppression: " + e.message);
+                    }
+                  }
+                }}
+                title="Refuser la demande"
+              />
+            </div>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Edit2 size={16} />}
+                onClick={() => {
+                  setSelectedUser(row);
+                  setFormData({
+                    firstName: row.firstName,
+                    lastName: row.lastName,
+                    email: row.email,
+                    department: row.department,
+                    role: row.role,
+                    status: row.status,
+                  });
+                  setIsEditModalOpen(true);
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Lock size={16} />}
+                onClick={() => {
+                  setSelectedUser(row);
+                  setIsResetPasswordModalOpen(true);
+                }}
+              />
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<Trash2 size={16} />}
+                onClick={async () => {
+                  if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                    await adminService.deleteUser(row.id.toString());
+                    fetchUsers();
+                  }
+                }}
+              />
+            </>
+          )}
         </div>
       ),
     },
   ];
 
   const activeUsers = filteredUsers.filter((u) => u.status === 'active').length;
-  const adminUsers = filteredUsers.filter((u) => u.role === 'Administrateur').length;
+  const pendingUsers = filteredUsers.filter((u) => u.status === 'inactive').length;
+  const adminUsers = filteredUsers.filter((u) => u.role === 'admin').length;
   const managerUsers = filteredUsers.filter((u) =>
-    u.role === 'Responsable de Service' || u.role === 'Responsable Achats' || u.role === 'Gestionnaire de Stock'
+    ['responsable_service', 'responsable_achats', 'gestionnaire_stock'].includes(u.role)
   ).length;
 
   return (
@@ -199,7 +211,10 @@ export const UsersManagementPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus size={20} />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setFormData({});
+              setIsCreateModalOpen(true);
+            }}
           >
             Ajouter un Utilisateur
           </Button>
@@ -223,6 +238,15 @@ export const UsersManagementPage: React.FC = () => {
               <div className="text-center">
                 <p className="text-sm text-neutral-600">Utilisateurs Actifs</p>
                 <p className="text-3xl font-bold text-green-600 mt-2">{activeUsers}</p>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardBody>
+              <div className="text-center">
+                <p className="text-sm text-neutral-600">En attente (Inactifs)</p>
+                <p className="text-3xl font-bold text-amber-600 mt-2">{pendingUsers}</p>
               </div>
             </CardBody>
           </Card>
@@ -259,11 +283,11 @@ export const UsersManagementPage: React.FC = () => {
               <Select
                 options={[
                   { value: '', label: 'Tous les Rôles' },
-                  { value: 'Administrateur', label: 'Administrateur' },
-                  { value: 'Responsable de Service', label: 'Responsable de Service' },
-                  { value: 'Gestionnaire de Stock', label: 'Gestionnaire de Stock' },
-                  { value: 'Responsable Achats', label: 'Responsable Achats' },
-                  { value: 'Employé', label: 'Employé' },
+                  { value: 'admin', label: 'Administrateur' },
+                  { value: 'responsable_service', label: 'Responsable de Service' },
+                  { value: 'gestionnaire_stock', label: 'Gestionnaire de Stock' },
+                  { value: 'responsable_achats', label: 'Responsable Achats' },
+                  { value: 'employe', label: 'Employé' },
                 ]}
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -303,19 +327,33 @@ export const UsersManagementPage: React.FC = () => {
         onClose={() => setIsCreateModalOpen(false)}
         title="Créer un Nouvel Utilisateur"
         size="lg"
-        onConfirm={() => {
-          setIsCreateModalOpen(false);
-          alert('Utilisateur créé avec succès');
+        onConfirm={async () => {
+          try {
+            await adminService.createUser({
+              email: formData.email,
+              password: formData.password || 'Password123!',
+              firstName: formData.firstName || '',
+              lastName: formData.lastName || '',
+              department: formData.department,
+              role: formData.role || 'employe',
+            } as any);
+            setIsCreateModalOpen(false);
+            setFormData({});
+            fetchUsers();
+          } catch (e) {
+            alert('Erreur lors de la création');
+          }
         }}
         confirmText="Créer"
       >
         <form className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Nom Complet" placeholder="Prénom Nom" />
-            <Input label="Email" type="email" placeholder="prenom.nom@hammemi.com" />
+            <Input label="Prénom" placeholder="Prénom" value={formData.firstName || ''} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+            <Input label="Nom" placeholder="Nom" value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+            <Input label="Email" type="email" placeholder="prenom.nom@hammemi.com" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+            <Input label="Département" placeholder="ex: Logistique" value={formData.department || ''} onChange={(e) => setFormData({...formData, department: e.target.value})} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Département" placeholder="ex: Logistique" />
             <Select
               label="Rôle"
               options={[
@@ -325,9 +363,11 @@ export const UsersManagementPage: React.FC = () => {
                 { value: 'responsable_achats', label: 'Responsable Achats' },
                 { value: 'admin', label: 'Administrateur' },
               ]}
+              value={formData.role || 'employe'}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
             />
+            <Input label="Mot de passe initial" type="password" placeholder="••••••••" value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} />
           </div>
-          <Input label="Mot de passe initial" type="password" placeholder="••••••••" />
         </form>
       </Modal>
 
@@ -341,20 +381,33 @@ export const UsersManagementPage: React.FC = () => {
           }}
           title="Modifier l'Utilisateur"
           size="lg"
-          onConfirm={() => {
-            setIsEditModalOpen(false);
-            setSelectedUser(null);
-            alert('Utilisateur mis à jour avec succès');
+          onConfirm={async () => {
+            if (!selectedUser) return;
+            try {
+              await adminService.updateUser(selectedUser.id.toString(), {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                department: formData.department,
+                role: formData.role,
+                status: formData.status,
+              });
+              setIsEditModalOpen(false);
+              setSelectedUser(null);
+              fetchUsers();
+            } catch (e) {
+              alert('Erreur lors de la modification');
+            }
           }}
           confirmText="Mettre à jour"
         >
           <form className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Nom Complet" defaultValue={selectedUser.name} />
-              <Input label="Email" type="email" defaultValue={selectedUser.email} />
+              <Input label="Prénom" value={formData.firstName || ''} onChange={(e) => setFormData({...formData, firstName: e.target.value})} />
+              <Input label="Nom" value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} />
+              <Input label="Email" type="email" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} disabled />
+              <Input label="Département" value={formData.department || ''} onChange={(e) => setFormData({...formData, department: e.target.value})} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Département" defaultValue={selectedUser.department} />
               <Select
                 label="Rôle"
                 options={[
@@ -364,17 +417,19 @@ export const UsersManagementPage: React.FC = () => {
                   { value: 'responsable_achats', label: 'Responsable Achats' },
                   { value: 'admin', label: 'Administrateur' },
                 ]}
-                defaultValue={selectedUser.role}
+                value={formData.role || ''}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+              />
+              <Select
+                label="Statut"
+                options={[
+                  { value: 'active', label: 'Actif' },
+                  { value: 'inactive', label: 'Inactif' },
+                ]}
+                value={formData.status || ''}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
               />
             </div>
-            <Select
-              label="Statut"
-              options={[
-                { value: 'active', label: 'Actif' },
-                { value: 'inactive', label: 'Inactif' },
-              ]}
-              defaultValue={selectedUser.status}
-            />
           </form>
         </Modal>
       )}

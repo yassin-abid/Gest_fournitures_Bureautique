@@ -25,10 +25,13 @@ interface AuthState {
   initializeAuth: () => void;
 }
 
+const initialUser = localStorageUtil.get<User>(storageKeys.user);
+const initialToken = localStorageUtil.get<string>(storageKeys.token);
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
+  user: initialUser,
+  token: initialToken,
+  isAuthenticated: !!(initialUser && initialToken),
   isLoading: false,
   error: null,
 

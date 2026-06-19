@@ -15,7 +15,7 @@ export const catalogService = {
     return response.data;
   },
 
-  getArticleById: async (id: string): Promise<Article> => {
+  getArticleById: async (id: number): Promise<Article> => {
     const response = await apiClient.get<Article>(`/articles/${id}`);
     return response.data;
   },
@@ -25,12 +25,12 @@ export const catalogService = {
     return response.data;
   },
 
-  updateArticle: async (id: string, data: Partial<CreateArticleRequest>): Promise<Article> => {
+  updateArticle: async (id: number, data: Partial<CreateArticleRequest>): Promise<Article> => {
     const response = await apiClient.put<Article>(`/articles/${id}`, data);
     return response.data;
   },
 
-  deleteArticle: async (id: string): Promise<void> => {
+  deleteArticle: async (id: number): Promise<void> => {
     await apiClient.delete(`/articles/${id}`);
   },
 
@@ -40,7 +40,7 @@ export const catalogService = {
     return response.data;
   },
 
-  getCategoryById: async (id: string): Promise<Category> => {
+  getCategoryById: async (id: number): Promise<Category> => {
     const response = await apiClient.get<Category>(`/categories/${id}`);
     return response.data;
   },
@@ -51,14 +51,14 @@ export const catalogService = {
   },
 
   updateCategory: async (
-    id: string,
+    id: number,
     data: Partial<Omit<Category, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<Category> => {
     const response = await apiClient.put<Category>(`/categories/${id}`, data);
     return response.data;
   },
 
-  deleteCategory: async (id: string): Promise<void> => {
+  deleteCategory: async (id: number): Promise<void> => {
     await apiClient.delete(`/categories/${id}`);
   },
 
@@ -70,7 +70,7 @@ export const catalogService = {
     return response.data;
   },
 
-  getSupplierById: async (id: string): Promise<Supplier> => {
+  getSupplierById: async (id: number): Promise<Supplier> => {
     const response = await apiClient.get<Supplier>(`/suppliers/${id}`);
     return response.data;
   },
@@ -81,14 +81,14 @@ export const catalogService = {
   },
 
   updateSupplier: async (
-    id: string,
+    id: number,
     data: Partial<Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<Supplier> => {
     const response = await apiClient.put<Supplier>(`/suppliers/${id}`, data);
     return response.data;
   },
 
-  deleteSupplier: async (id: string): Promise<void> => {
+  deleteSupplier: async (id: number): Promise<void> => {
     await apiClient.delete(`/suppliers/${id}`);
   },
 };

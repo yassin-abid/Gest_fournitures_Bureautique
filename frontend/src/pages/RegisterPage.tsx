@@ -52,8 +52,18 @@ export const RegisterPage: React.FC = () => {
 
     try {
       if (register) {
-         await register(formData);
-         showSuccess('Compte créé avec succès. Veuillez vous connecter.');
+         const nameParts = formData.fullname.trim().split(' ');
+         const firstName = nameParts[0];
+         const lastName = nameParts.slice(1).join(' ') || firstName;
+
+         await register({
+           firstName,
+           lastName,
+           email: formData.email,
+           password: formData.password,
+           department: formData.department
+         });
+         showSuccess('Compte créé ! Votre compte est en attente de validation par un administrateur.');
          navigate('/login');
       } else {
          setError('La fonction d\'inscription n\'est pas disponible.');

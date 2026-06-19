@@ -17,18 +17,18 @@ interface CatalogState {
   setArticles: (articles: Article[]) => void;
   addArticle: (article: Article) => void;
   updateArticle: (article: Article) => void;
-  deleteArticle: (id: string) => void;
+  deleteArticle: (id: number) => void;
   setSelectedArticle: (article: Article | null) => void;
 
   setCategories: (categories: Category[]) => void;
   addCategory: (category: Category) => void;
   updateCategory: (category: Category) => void;
-  deleteCategory: (id: string) => void;
+  deleteCategory: (id: number) => void;
 
   setSuppliers: (suppliers: Supplier[]) => void;
   addSupplier: (supplier: Supplier) => void;
   updateSupplier: (supplier: Supplier) => void;
-  deleteSupplier: (id: string) => void;
+  deleteSupplier: (id: number) => void;
 
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;

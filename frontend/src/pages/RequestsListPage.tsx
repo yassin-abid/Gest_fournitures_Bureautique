@@ -3,9 +3,9 @@
  * Show all supply requests
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye, Edit2, Trash2, Send, PackageCheck, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Eye, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -16,6 +16,7 @@ import { Select, Input } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { Modal } from '@components/Modal';
 import { useAuth } from '@hooks/useAuth';
+import { requestsService } from '@services/requestsService';
 import type { SupplyRequest } from '@/types/requests';
 
 export const RequestsListPage: React.FC = () => {
@@ -24,184 +25,77 @@ export const RequestsListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedPriority, setSelectedPriority] = useState('');
+  
+  const [requests, setRequests] = useState<SupplyRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<number | null>(null);
+
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [requestToReject, setRequestToReject] = useState<string | null>(null);
+  const [requestToReject, setRequestToReject] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  const [requests, setRequests] = useState<SupplyRequest[]>([
-    {
-      id: 'req-006',
-      requestNumber: 'REQ-006',
-      userId: 'usr-emp2',
-      userName: 'Amira Belaid',
-      department: 'Ressources Humaines',
-      status: 'submitted',
-      priority: 'high',
-      items: [
-        {
-          id: 'item-006',
-          articleId: 'art-010',
-          articleName: 'Classeurs rigides',
-          quantity: 20,
-          unit: 'Pièce',
-          estimatedCost: 120.00,
-        },
-      ],
-      justification: 'Archivage des nouveaux dossiers employés',
-      estimatedBudget: 120,
-      createdAt: '2024-06-11',
-      submittedAt: '2024-06-11',
-      updatedAt: '2024-06-11',
-    },
-    {
-      id: 'req-001',
-      requestNumber: 'REQ-001',
-      userId: 'usr-emp',
-      userName: 'Youssef Trabelsi',
-      department: 'Commercial',
-      status: 'draft',
-      priority: 'high',
-      items: [
-        {
-          id: 'item-001',
-          articleId: 'art-001',
-          articleName: 'A4 Paper (500 sheets)',
-          quantity: 10,
-          unit: 'Ream',
-          estimatedCost: 59.90,
-          notes: 'For sales reports',
-        },
-      ],
-      justification: 'Need for upcoming campaign',
-      estimatedBudget: 500,
-      createdAt: '2024-06-10',
-      submittedAt: '2024-06-10',
-      updatedAt: '2024-06-10',
-    },
-    {
-      id: 'req-002',
-      requestNumber: 'REQ-002',
-      userId: 'usr-resp',
-      userName: 'Sonia Ben Ali',
-      department: 'Ressources Humaines',
-      status: 'approved',
-      priority: 'medium',
-      items: [
-        {
-          id: 'item-002',
-          articleId: 'art-005',
-          articleName: 'Notebook (Ruled)',
-          quantity: 50,
-          unit: 'Pack',
-          estimatedCost: 175.00,
-        },
-      ],
-      justification: 'Training materials',
-      estimatedBudget: 300,
-      approvedBy: 'manager-001',
-      createdAt: '2024-06-09',
-      submittedAt: '2024-06-09',
-      approvedAt: '2024-06-10',
-      updatedAt: '2024-06-10',
-    },
-    {
-      id: 'req-003',
-      requestNumber: 'REQ-003',
-      userId: 'usr-stock',
-      userName: 'Mourad Gharbi',
-      department: 'Logistique',
-      status: 'draft',
-      priority: 'low',
-      items: [
-        {
-          id: 'item-003',
-          articleId: 'art-002',
-          articleName: 'Ballpoint Pen (Blue)',
-          quantity: 5,
-          unit: 'Box',
-          estimatedCost: 62.50,
-        },
-      ],
-      justification: 'Regular office supplies',
-      createdAt: '2024-06-09',
-      updatedAt: '2024-06-09',
-    },
-    {
-      id: 'req-004',
-      requestNumber: 'REQ-004',
-      userId: 'usr-achats',
-      userName: 'Leila Mansour',
-      department: 'Achats & Finance',
-      status: 'submitted',
-      priority: 'urgent',
-      items: [],
-      justification: 'Critical supplies needed',
-      createdAt: '2024-06-08',
-      submittedAt: '2024-06-08',
-      updatedAt: '2024-06-08',
-    },
-    {
-      id: 'req-005',
-      requestNumber: 'REQ-005',
-      userId: 'usr-emp',
-      userName: 'Youssef Trabelsi',
-      department: 'Commercial',
-      status: 'rejected',
-      priority: 'low',
-      items: [],
-      justification: 'Not needed',
-      rejectionReason: 'Budget not available for this period',
-      createdAt: '2024-06-07',
-      submittedAt: '2024-06-07',
-      updatedAt: '2024-06-09',
-    },
-  ]);
+  const [isRealDeleteModalOpen, setIsRealDeleteModalOpen] = useState(false);
+  const [requestToRealDelete, setRequestToRealDelete] = useState<number | null>(null);
+
+  const fetchRequests = async () => {
+    setIsLoading(true);
+    try {
+      const res = await requestsService.getRequests(1, 100, selectedStatus || undefined);
+      setRequests(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [selectedStatus]);
 
   const filteredRequests = useMemo(() => {
     return requests.filter((request) => {
-      // Employé: only see own requests
-      if (user?.role === 'employe' && request.userId !== user?.id) return false;
-      // Responsable Service: only see requests from their department
-      if (user?.role === 'responsable_service' && request.department !== user?.department) return false;
-      // Responsable Achats: only see approved requests
-      if (user?.role === 'responsable_achats' && request.status !== 'approved') return false;
+      // Responsable Achats: only see approved/delivered/processed requests
+      if (user?.role === 'responsable_achats' && !['approuvée', 'livrée', 'traitee'].includes(request.status)) return false;
 
       const matchesSearch =
         request.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (request.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-      const matchesStatus = !selectedStatus || request.status === selectedStatus;
       const matchesPriority = !selectedPriority || request.priority === selectedPriority;
-      return matchesSearch && matchesStatus && matchesPriority;
+      return matchesSearch && matchesPriority;
     });
-  }, [searchTerm, selectedStatus, selectedPriority, user]);
+  }, [requests, searchTerm, selectedPriority, user]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'draft':
+      case 'en_attente':
         return 'warning';
-      case 'submitted':
-        return 'info';
-      case 'approved':
+      case 'approuvée':
         return 'success';
-      case 'rejected':
+      case 'refusée':
         return 'danger';
-      case 'pending':
+      case 'annulée':
         return 'warning';
-      default:
+      case 'livrée':
         return 'primary';
+      case 'traitee':
+        return 'secondary';
+      default:
+        return 'info';
     }
   };
 
   const getPriorityVariant = (priority: string) => {
     switch (priority) {
-      case 'urgent':
+      case 'urgente':
         return 'danger';
-      case 'high':
+      case 'haute':
         return 'warning';
-      case 'medium':
+      case 'normale':
         return 'info';
-      case 'low':
+      case 'basse':
         return 'success';
       default:
         return 'primary';
@@ -210,39 +104,70 @@ export const RequestsListPage: React.FC = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Brouillon';
-      case 'submitted': return 'Soumise';
-      case 'approved': return 'Approuvée';
-      case 'rejected': return 'Rejetée';
-      case 'pending': return 'En attente';
+      case 'en_attente': return 'En attente';
+      case 'approuvée': return 'Approuvée';
+      case 'refusée': return 'Refusée';
+      case 'annulée': return 'Annulée';
+      case 'livrée': return 'Livrée';
+      case 'traitee': return 'Traitée';
       default: return status;
     }
   };
 
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'Urgent';
-      case 'high': return 'Haute';
-      case 'medium': return 'Moyenne';
-      case 'low': return 'Basse';
+      case 'urgente': return 'Urgente';
+      case 'haute': return 'Haute';
+      case 'normale': return 'Normale';
+      case 'basse': return 'Basse';
       default: return priority;
     }
   };
 
-  const handleApprove = (id: string) => {
-    setRequests(requests.map(req => 
-      req.id === id ? { ...req, status: 'approved', approvedBy: user?.id, approvedAt: new Date().toISOString().split('T')[0] } : req
-    ));
+  const handleApprove = async (id: number) => {
+    try {
+      await requestsService.approveRequest(id);
+      fetchRequests();
+    } catch (e: any) {
+      alert("Erreur lors de l'approbation: " + e.message);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!requestToReject || !rejectReason.trim()) return;
-    setRequests(requests.map(req => 
-      req.id === requestToReject ? { ...req, status: 'rejected', rejectionReason: rejectReason } : req
-    ));
-    setRejectModalOpen(false);
-    setRequestToReject(null);
-    setRejectReason('');
+    try {
+      await requestsService.rejectRequest(requestToReject, rejectReason);
+      setRejectModalOpen(false);
+      setRequestToReject(null);
+      setRejectReason('');
+      fetchRequests();
+    } catch (e: any) {
+      alert("Erreur lors du rejet: " + e.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!requestToDelete) return;
+    try {
+      await requestsService.cancelRequest(requestToDelete);
+      setIsDeleteModalOpen(false);
+      setRequestToDelete(null);
+      fetchRequests();
+    } catch (e: any) {
+      alert("Erreur lors de l'annulation: " + e.message);
+    }
+  };
+
+  const handleRealDelete = async () => {
+    if (!requestToRealDelete) return;
+    try {
+      await requestsService.deleteRequest(requestToRealDelete);
+      setIsRealDeleteModalOpen(false);
+      setRequestToRealDelete(null);
+      fetchRequests();
+    } catch (e: any) {
+      alert("Erreur lors de la suppression: " + e.message);
+    }
   };
 
   const columns = [
@@ -311,13 +236,14 @@ export const RequestsListPage: React.FC = () => {
       key: 'createdAt' as const,
       label: 'Date',
       sortable: true,
+      render: (value: string) => <span>{new Date(value).toLocaleDateString()}</span>
     },
     {
       key: 'id' as const,
       label: 'Actions',
       sortable: false,
       width: '300px',
-      render: (_value: string, row: SupplyRequest) => (
+      render: (_value: number, row: SupplyRequest) => (
         <div className="flex items-center gap-2 flex-nowrap">
           <Button
             variant="ghost"
@@ -329,7 +255,7 @@ export const RequestsListPage: React.FC = () => {
           </Button>
 
           {/* Responsable Service actions */}
-          {user?.role === 'responsable_service' && row.status === 'submitted' && (
+          {user?.role === 'responsable_service' && row.status === 'en_attente' && (
             <>
               <Button
                 variant="primary"
@@ -355,71 +281,66 @@ export const RequestsListPage: React.FC = () => {
             </>
           )}
 
-          {/* Responsable Achats actions on approved requests */}
-          {user?.role === 'responsable_achats' && row.status === 'approved' && (
+          {/* Responsable Achats actions */}
+          {(user?.role === 'responsable_achats' || user?.role === 'admin') && (
             <>
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<Loader2 size={16} />}
-                title="Marquer en cours de traitement"
-              >
-                En cours
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={<PackageCheck size={16} />}
-                title="Marquer comme livrée"
-              >
-                Livrée
-              </Button>
-            </>
-          )}
-
-          {/* Employé/Other draft actions */}
-          {user?.role !== 'responsable_achats' && row.status === 'draft' && (
-            <>
-              <Button variant="ghost" size="sm" icon={<Edit2 size={16} />}>
-                Modifier
-              </Button>
-              <Button variant="ghost" size="sm" icon={<Send size={16} />}>
-                Soumettre
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                icon={<Trash2 size={16} />}
-                onClick={() => setIsDeleteModalOpen(true)}
-              />
+              {row.status === 'approuvée' && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus size={16} />}
+                  onClick={() => navigate(`/orders/create?requestId=${row.id}`)}
+                  title="Créer une commande pour cette demande"
+                >
+                  Commander
+                </Button>
+              )}
+              {row.status === 'traitee' && (
+                <Badge variant="secondary">Commande en cours</Badge>
+              )}
             </>
           )}
 
           {/* Employé pending actions (submitted) */}
-          {user?.role === 'employe' && row.status === 'submitted' && (
+          {user?.role === 'employe' && row.status === 'en_attente' && (
             <>
-              <Button variant="ghost" size="sm" icon={<Edit2 size={16} />} title="Modifier la demande">
-                Modifier
-              </Button>
               <Button
                 variant="danger"
                 size="sm"
                 icon={<XCircle size={16} />}
-                onClick={() => setIsDeleteModalOpen(true)}
+                onClick={() => {
+                  setRequestToDelete(row.id);
+                  setIsDeleteModalOpen(true);
+                }}
                 title="Annuler la demande"
               >
                 Annuler
               </Button>
             </>
           )}
+
+          {/* Delete action (Admin, Responsables) */}
+          {['admin', 'responsable_achats', 'responsable_service'].includes(user?.role || '') && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                setRequestToRealDelete(row.id);
+                setIsRealDeleteModalOpen(true);
+              }}
+              title="Supprimer définitivement"
+            >
+              Supprimer
+            </Button>
+          )}
         </div>
       ),
     },
   ];
 
-  const pendingCount = filteredRequests.filter((r) => r.status === 'submitted' || r.status === 'draft').length;
-  const approvedCount = filteredRequests.filter((r) => r.status === 'approved').length;
-  const rejectedCount = filteredRequests.filter((r) => r.status === 'rejected').length;
+  const pendingCount = filteredRequests.filter((r) => r.status === 'en_attente').length;
+  const approvedCount = filteredRequests.filter((r) => r.status === 'approuvée').length;
+  const rejectedCount = filteredRequests.filter((r) => r.status === 'refusée').length;
 
   return (
     <MainLayout title="Demandes de Fournitures">
@@ -432,7 +353,7 @@ export const RequestsListPage: React.FC = () => {
             </h2>
             <p className="text-neutral-600 mt-2">
               {user?.role === 'responsable_achats'
-                ? 'Consultez les demandes approuvées et mettez à jour leur statut de traitement'
+                ? 'Consultez les demandes approuvées'
                 : 'Gérez les demandes de fournitures de votre équipe'}
             </p>
           </div>
@@ -463,7 +384,7 @@ export const RequestsListPage: React.FC = () => {
           <Card>
             <CardBody>
               <div className="text-center">
-                <p className="text-sm text-neutral-600">En attente/Soumises</p>
+                <p className="text-sm text-neutral-600">En attente</p>
                 <p className="text-3xl font-bold text-amber-600 mt-2">{pendingCount}</p>
               </div>
             </CardBody>
@@ -481,7 +402,7 @@ export const RequestsListPage: React.FC = () => {
           <Card>
             <CardBody>
               <div className="text-center">
-                <p className="text-sm text-neutral-600">Rejetées</p>
+                <p className="text-sm text-neutral-600">Refusées</p>
                 <p className="text-3xl font-bold text-red-600 mt-2">{rejectedCount}</p>
               </div>
             </CardBody>
@@ -489,9 +410,9 @@ export const RequestsListPage: React.FC = () => {
         </div>
 
         {/* Alerts */}
-        {pendingCount > 0 && (
+        {pendingCount > 0 && user?.role === 'responsable_service' && (
           <Alert type="info" closable>
-            Vous avez {pendingCount} demande(s) en attente ou soumise(s) nécessitant une approbation.
+            Vous avez {pendingCount} demande(s) en attente nécessitant une approbation.
           </Alert>
         )}
 
@@ -509,11 +430,12 @@ export const RequestsListPage: React.FC = () => {
                 <Select
                   options={[
                     { value: '', label: 'Tous les statuts' },
-                    { value: 'draft', label: 'Brouillon' },
-                    { value: 'submitted', label: 'Soumise' },
-                    { value: 'pending', label: 'En attente' },
-                    { value: 'approved', label: 'Approuvée' },
-                    { value: 'rejected', label: 'Rejetée' },
+                    { value: 'en_attente', label: 'En attente' },
+                    { value: 'approuvée', label: 'Approuvée' },
+                    { value: 'refusée', label: 'Refusée' },
+                    { value: 'annulée', label: 'Annulée' },
+                    { value: 'livrée', label: 'Livrée' },
+                    { value: 'traitee', label: 'Traitée' },
                   ]}
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
@@ -522,10 +444,10 @@ export const RequestsListPage: React.FC = () => {
                 <Select
                   options={[
                     { value: '', label: 'Toutes les priorités' },
-                    { value: 'urgent', label: 'Urgent' },
-                    { value: 'high', label: 'Haute' },
-                    { value: 'medium', label: 'Moyenne' },
-                    { value: 'low', label: 'Basse' },
+                    { value: 'urgente', label: 'Urgente' },
+                    { value: 'haute', label: 'Haute' },
+                    { value: 'normale', label: 'Normale' },
+                    { value: 'basse', label: 'Basse' },
                   ]}
                   value={selectedPriority}
                   onChange={(e) => setSelectedPriority(e.target.value)}
@@ -540,12 +462,16 @@ export const RequestsListPage: React.FC = () => {
         <Card>
           <CardHeader title={`Demandes (${filteredRequests.length})`} />
           <CardBody>
-            <DataTable<SupplyRequest>
-              columns={columns}
-              data={filteredRequests}
-              rowKey="id"
-              pageSize={10}
-            />
+            {isLoading ? (
+              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+            ) : (
+              <DataTable<SupplyRequest>
+                columns={columns}
+                data={filteredRequests}
+                rowKey="id"
+                pageSize={10}
+              />
+            )}
           </CardBody>
         </Card>
       </div>
@@ -554,11 +480,12 @@ export const RequestsListPage: React.FC = () => {
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        title="Supprimer la Demande"
-        confirmText="Supprimer"
+        title="Annuler la Demande"
+        confirmText="Confirmer l'annulation"
+        onConfirm={handleDelete}
       >
         <p className="text-neutral-700">
-          Êtes-vous sûr de vouloir supprimer cette demande ? Cette action est irréversible.
+          Êtes-vous sûr de vouloir annuler cette demande ? Cette action modifiera son statut en "Annulée".
         </p>
       </Modal>
 
@@ -582,6 +509,19 @@ export const RequestsListPage: React.FC = () => {
             required
           />
         </div>
+      </Modal>
+
+      {/* Real Delete Modal */}
+      <Modal
+        isOpen={isRealDeleteModalOpen}
+        onClose={() => setIsRealDeleteModalOpen(false)}
+        title="Supprimer la Demande"
+        confirmText="Supprimer définitivement"
+        onConfirm={handleRealDelete}
+      >
+        <p className="text-neutral-700">
+          Êtes-vous sûr de vouloir supprimer définitivement cette demande ? Cette action est irréversible et supprimera toutes les données associées.
+        </p>
       </Modal>
     </MainLayout>
   );

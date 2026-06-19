@@ -9,10 +9,11 @@ import type { PaginatedResponse } from '@/types/common';
 
 export const adminService = {
   // Users Management
-  getUsers: async (page = 1, limit = 10): Promise<PaginatedResponse<User>> => {
-    const response = await apiClient.get<PaginatedResponse<User>>('/admin/users', {
-      params: { page, limit },
-    });
+  getUsers: async (page = 1, limit = 10, role?: string, search?: string): Promise<PaginatedResponse<User>> => {
+    const params: any = { page, limit };
+    if (role) params.role = role;
+    if (search) params.search = search;
+    const response = await apiClient.get<PaginatedResponse<User>>('/admin/users', { params });
     return response.data;
   },
 
@@ -33,6 +34,10 @@ export const adminService = {
 
   deleteUser: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/users/${id}`);
+  },
+
+  hardDeleteUser: async (id: string): Promise<void> => {
+    await apiClient.delete(`/admin/users/${id}/hard`);
   },
 
   deactivateUser: async (id: string): Promise<User> => {

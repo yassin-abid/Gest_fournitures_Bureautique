@@ -2,23 +2,24 @@
  * Request and Orders Types
  */
 
-export type RequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'cancelled';
-export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type RequestStatus = 'en_attente' | 'approuvée' | 'refusée' | 'annulée' | 'livrée' | 'traitee';
+export type RequestPriority = 'basse' | 'normale' | 'haute' | 'urgente';
 
 export interface RequestItem {
-  id: string;
-  articleId: string;
+  id: number;
+  articleId: number;
   articleName?: string;
   quantity: number;
+  approvedQuantity?: number;
   unit?: string;
   estimatedCost?: number;
   notes?: string;
 }
 
 export interface SupplyRequest {
-  id: string;
+  id: number;
   requestNumber: string;
-  userId: string;
+  userId: number;
   userName?: string;
   department?: string;
   status: RequestStatus;
@@ -26,7 +27,7 @@ export interface SupplyRequest {
   items: RequestItem[];
   justification?: string;
   estimatedBudget?: number;
-  approvedBy?: string;
+  approvedBy?: number;
   rejectionReason?: string;
   createdAt: string;
   submittedAt?: string;
@@ -34,11 +35,11 @@ export interface SupplyRequest {
   updatedAt: string;
 }
 
-export type OrderStatus = 'draft' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'en_attente' | 'confirmée' | 'expédiée' | 'livrée' | 'partielle' | 'annulée';
 
 export interface OrderItem {
-  id: string;
-  articleId: string;
+  id: number;
+  articleId: number;
   articleName?: string;
   quantity: number;
   unit?: string;
@@ -50,9 +51,11 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
+  id: number;
   orderNumber: string;
-  supplierId: string;
+  requestId?: number;
+  requestNumber?: string;
+  supplierId: number;
   supplierName?: string;
   status: OrderStatus;
   items: OrderItem[];
@@ -75,13 +78,14 @@ export interface CreateRequestRequest {
 }
 
 export interface CreateRequestItemRequest {
-  articleId: string;
+  articleId: number;
   quantity: number;
   notes?: string;
 }
 
 export interface CreateOrderRequest {
-  supplierId: string;
+  requestId?: number;
+  supplierId: number;
   items: CreateOrderItemRequest[];
   paymentTerms?: string;
   expectedDeliveryDate?: string;
@@ -89,7 +93,7 @@ export interface CreateOrderRequest {
 }
 
 export interface CreateOrderItemRequest {
-  articleId: string;
+  articleId: number;
   quantity: number;
   unitPrice: number;
   notes?: string;

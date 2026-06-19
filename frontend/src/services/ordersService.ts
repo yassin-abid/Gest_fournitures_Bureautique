@@ -16,7 +16,7 @@ export const ordersService = {
   },
 
   // Get order by ID
-  getOrderById: async (id: string): Promise<Order> => {
+  getOrderById: async (id: number): Promise<Order> => {
     const response = await apiClient.get<Order>(`/orders/${id}`);
     return response.data;
   },
@@ -28,48 +28,48 @@ export const ordersService = {
   },
 
   // Update order
-  updateOrder: async (id: string, data: Partial<CreateOrderRequest>): Promise<Order> => {
+  updateOrder: async (id: number, data: Partial<CreateOrderRequest>): Promise<Order> => {
     const response = await apiClient.put<Order>(`/orders/${id}`, data);
     return response.data;
   },
 
   // Confirm order
-  confirmOrder: async (id: string): Promise<Order> => {
+  confirmOrder: async (id: number): Promise<Order> => {
     const response = await apiClient.post<Order>(`/orders/${id}/confirm`, {});
     return response.data;
   },
 
   // Ship order
-  shipOrder: async (id: string, trackingNumber?: string): Promise<Order> => {
+  shipOrder: async (id: number, trackingNumber?: string): Promise<Order> => {
     const response = await apiClient.post<Order>(`/orders/${id}/ship`, { trackingNumber });
     return response.data;
   },
 
   // Receive delivery
-  receiveDelivery: async (id: string, items: Array<{ itemId: string; quantity: number }>): Promise<Order> => {
+  receiveDelivery: async (id: number, items: Array<{ itemId: number; quantity: number }>): Promise<Order> => {
     const response = await apiClient.post<Order>(`/orders/${id}/receive`, { items });
     return response.data;
   },
 
   // Cancel order
-  cancelOrder: async (id: string, reason?: string): Promise<Order> => {
+  cancelOrder: async (id: number, reason?: string): Promise<Order> => {
     const response = await apiClient.post<Order>(`/orders/${id}/cancel`, { reason });
     return response.data;
   },
 
   // Delete order
-  deleteOrder: async (id: string): Promise<void> => {
+  deleteOrder: async (id: number): Promise<void> => {
     await apiClient.delete(`/orders/${id}`);
   },
 
   // Generate invoice
-  generateInvoice: async (id: string): Promise<{ url: string }> => {
+  generateInvoice: async (id: number): Promise<{ url: string }> => {
     const response = await apiClient.post<{ url: string }>(`/orders/${id}/invoice`, {});
     return response.data;
   },
 
   // Export order
-  exportOrder: async (id: string, format: 'pdf' | 'excel'): Promise<Blob> => {
+  exportOrder: async (id: number, format: 'pdf' | 'excel'): Promise<Blob> => {
     const response = await apiClient.get(`/orders/${id}/export`, {
       params: { format },
       responseType: 'blob',

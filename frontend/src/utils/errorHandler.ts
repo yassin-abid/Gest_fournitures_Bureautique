@@ -22,9 +22,14 @@ export const handleApiError = (error: any): ApiError => {
     const status = error.response.status;
     const data = error.response.data;
 
+    let errorMessage = data.message || data.error || getDefaultErrorMessage(status);
+    if (status === 400 && data.details && Array.isArray(data.details)) {
+      errorMessage = data.details.map((d: any) => d.message).join(', ');
+    }
+
     return {
       code: data.code || `ERROR_${status}`,
-      message: data.message || getDefaultErrorMessage(status),
+      message: errorMessage,
       details: data.details,
     };
   } else if (error.request) {

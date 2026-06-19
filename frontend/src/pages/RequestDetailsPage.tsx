@@ -3,8 +3,9 @@
  * Show request details with approval history
  */
 
-import React, { useState } from 'react';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check, X, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody, CardFooter } from '@components/Card';
 import { Button } from '@components/Button';
@@ -14,67 +15,39 @@ import { Modal } from '@components/Modal';
 import { Textarea } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { useAuth } from '@hooks/useAuth';
+import { requestsService } from '@services/requestsService';
 import type { SupplyRequest, RequestItem } from '@/types/requests';
 
 export const RequestDetailsPage: React.FC = () => {
-  const { hasPermission } = useAuth();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const [request, setRequest] = useState<SupplyRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const mockRequest: SupplyRequest = {
-    id: 'req-001',
-    requestNumber: 'REQ-001',
-    userId: 'user-001',
-    userName: 'John Smith',
-    department: 'Sales',
-    status: 'submitted',
-    priority: 'high',
-    items: [
-      {
-        id: 'item-001',
-        articleId: 'art-001',
-        articleName: 'A4 Paper (500 sheets)',
-        quantity: 10,
-        unit: 'Ream',
-        estimatedCost: 59.90,
-        notes: 'For sales reports',
-      },
-      {
-        id: 'item-002',
-        articleId: 'art-002',
-        articleName: 'Ballpoint Pen (Blue)',
-        quantity: 5,
-        unit: 'Box',
-        estimatedCost: 62.50,
-        notes: 'Team use',
-      },
-    ],
-    justification: 'Need for upcoming campaign and daily operations',
-    estimatedBudget: 200,
-    createdAt: '2024-06-10',
-    submittedAt: '2024-06-10',
-    updatedAt: '2024-06-10',
+  const fetchRequest = async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+      const data = await requestsService.getRequestById(Number(id));
+      setRequest(data);
+    } catch (err) {
+      console.error(err);
+      alert('Erreur lors du chargement de la demande');
+      navigate('/requests');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const approvalHistory = [
-    {
-      id: '1',
-      action: 'Créé',
-      user: 'John Smith',
-      role: 'Demandeur',
-      date: '2024-06-10 10:00',
-      status: 'info' as const,
-    },
-    {
-      id: '2',
-      action: 'Soumise',
-      user: 'John Smith',
-      role: 'Demandeur',
-      date: '2024-06-10 10:15',
-      status: 'info' as const,
-    },
-  ];
+  useEffect(() => {
+    fetchRequest();
+  }, [id]);
 
   const itemColumns = [
     {
@@ -88,15 +61,9 @@ export const RequestDetailsPage: React.FC = () => {
       sortable: false,
       render: (value: number, row: RequestItem) => (
         <span>
-          {value} {row.unit}
+          {value} {row.unit || 'unité(s)'}
         </span>
       ),
-    },
-    {
-      key: 'estimatedCost' as const,
-      label: 'Coût Estimé',
-      sortable: false,
-      render: (value: number) => <span>€{value.toFixed(2)}</span>,
     },
     {
       key: 'notes' as const,
@@ -106,51 +73,93 @@ export const RequestDetailsPage: React.FC = () => {
     },
   ];
 
-  const totalEstimatedCost = mockRequest.items.reduce(
-    (sum, item) => sum + (item.estimatedCost || 0),
-    0
-  );
-
-  const handleApprove = () => {
-    setIsApproveModalOpen(false);
-    alert('Demande approuvée avec succès');
+  const handleApprove = async () => {
+    if (!id) return;
+    try {
+      await requestsService.approveRequest(Number(id));
+      setIsApproveModalOpen(false);
+      fetchRequest();
+    } catch (err: any) {
+      alert("Erreur lors de l'approbation: " + err.message);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
+    if (!id) return;
     if (!rejectionReason.trim()) {
       alert('Veuillez fournir une raison de rejet');
       return;
     }
-    setIsRejectModalOpen(false);
-    setRejectionReason('');
-    alert('Demande rejetée avec succès');
+    try {
+      await requestsService.rejectRequest(Number(id), rejectionReason);
+      setIsRejectModalOpen(false);
+      setRejectionReason('');
+      fetchRequest();
+    } catch (err: any) {
+      alert("Erreur lors du rejet: " + err.message);
+    }
   };
 
-  const canApproveReject = mockRequest.status === 'submitted' && hasPermission('approve_requests');
+  if (isLoading) {
+    return (
+      <MainLayout title="Détails de la demande">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="animate-spin text-primary-500" size={48} />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!request) return null;
+
+  const canApproveReject = request.status === 'en_attente' && user?.role === 'responsable_service';
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'en_attente': return 'warning';
+      case 'approuvée': return 'success';
+      case 'refusée': return 'danger';
+      case 'annulée': return 'warning';
+      case 'livrée': return 'primary';
+      case 'traitee': return 'secondary';
+      default: return 'info';
+    }
+  };
+
+  const getPriorityVariant = (priority: string) => {
+    switch (priority) {
+      case 'urgente': return 'danger';
+      case 'haute': return 'warning';
+      case 'normale': return 'info';
+      case 'basse': return 'success';
+      default: return 'primary';
+    }
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'draft': return 'Brouillon';
-      case 'submitted': return 'Soumise';
-      case 'approved': return 'Approuvée';
-      case 'rejected': return 'Rejetée';
-      case 'pending': return 'En attente';
+      case 'en_attente': return 'En attente';
+      case 'approuvée': return 'Approuvée';
+      case 'refusée': return 'Refusée';
+      case 'annulée': return 'Annulée';
+      case 'livrée': return 'Livrée';
+      case 'traitee': return 'Traitée';
       default: return status;
     }
   };
 
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'Urgent';
-      case 'high': return 'Haute';
-      case 'medium': return 'Moyenne';
-      case 'low': return 'Basse';
+      case 'urgente': return 'Urgente';
+      case 'haute': return 'Haute';
+      case 'normale': return 'Normale';
+      case 'basse': return 'Basse';
       default: return priority;
     }
   };
 
   return (
-    <MainLayout title={`Demande ${mockRequest.requestNumber}`}>
+    <MainLayout title={`Demande ${request.requestNumber}`}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -158,13 +167,13 @@ export const RequestDetailsPage: React.FC = () => {
             variant="ghost"
             size="sm"
             icon={<ArrowLeft size={20} />}
-            onClick={() => window.history.back()}
+            onClick={() => navigate('/requests')}
           >
             Retour
           </Button>
           <div>
             <h2 className="text-3xl font-bold text-neutral-900">
-              Demande {mockRequest.requestNumber}
+              Demande {request.requestNumber}
             </h2>
             <p className="text-neutral-600 mt-2">Affichez et gérez les détails de la demande</p>
           </div>
@@ -177,107 +186,70 @@ export const RequestDetailsPage: React.FC = () => {
               <div>
                 <p className="text-sm text-neutral-600">Statut</p>
                 <Badge
-                  variant={
-                    mockRequest.status === 'submitted'
-                      ? 'info'
-                      : mockRequest.status === 'approved'
-                      ? 'success'
-                      : 'warning'
-                  }
+                  variant={getStatusVariant(request.status)}
                   className="mt-2"
                 >
-                  {getStatusLabel(mockRequest.status)}
+                  {getStatusLabel(request.status)}
                 </Badge>
               </div>
 
               <div>
                 <p className="text-sm text-neutral-600">Priorité</p>
                 <Badge
-                  variant={
-                    mockRequest.priority === 'urgent'
-                      ? 'danger'
-                      : mockRequest.priority === 'high'
-                      ? 'warning'
-                      : 'info'
-                  }
+                  variant={getPriorityVariant(request.priority)}
                   className="mt-2"
                 >
-                  {getPriorityLabel(mockRequest.priority)}
+                  {getPriorityLabel(request.priority)}
                 </Badge>
               </div>
 
               <div>
                 <p className="text-sm text-neutral-600">Demandeur</p>
-                <p className="font-semibold text-neutral-900 mt-1">{mockRequest.userName}</p>
-                <p className="text-sm text-neutral-600">{mockRequest.department}</p>
+                <p className="font-semibold text-neutral-900 mt-1">{request.userName}</p>
+                <p className="text-sm text-neutral-600">{request.department}</p>
               </div>
 
               <div>
-                <p className="text-sm text-neutral-600">Date de soumission</p>
+                <p className="text-sm text-neutral-600">Date de création</p>
                 <p className="font-semibold text-neutral-900 mt-1">
-                  {mockRequest.submittedAt || mockRequest.createdAt}
+                  {new Date(request.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
           </CardBody>
         </Card>
 
-        {/* Justification */}
-        <Card>
-          <CardHeader title="Justification" />
-          <CardBody>
-            <p className="text-neutral-700">{mockRequest.justification}</p>
-          </CardBody>
-        </Card>
+        {/* Justification & Rejection Reason */}
+        <div className="grid grid-cols-1 gap-6">
+          <Card>
+            <CardHeader title="Justification" />
+            <CardBody>
+              <p className="text-neutral-700">{request.justification || 'Aucune justification fournie.'}</p>
+            </CardBody>
+          </Card>
+          
+          {request.status === 'refusée' && request.rejectionReason && (
+            <Card>
+              <CardHeader title="Motif du rejet" />
+              <CardBody>
+                <Alert type="error">
+                  {request.rejectionReason}
+                </Alert>
+              </CardBody>
+            </Card>
+          )}
+        </div>
 
         {/* Items */}
         <Card>
-          <CardHeader title={`Articles (${mockRequest.items.length})`} />
+          <CardHeader title={`Articles (${request.items.length})`} />
           <CardBody>
             <DataTable<RequestItem>
               columns={itemColumns}
-              data={mockRequest.items}
+              data={request.items}
               rowKey="id"
               pageSize={10}
             />
-
-            <div className="border-t border-neutral-200 mt-6 pt-6">
-              <div className="flex items-center justify-end">
-                <div>
-                  <p className="text-sm text-neutral-600">Budget Estimé Total :</p>
-                  <p className="text-3xl font-bold text-primary-600 mt-1">
-                    €{totalEstimatedCost.toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Approval History */}
-        <Card>
-          <CardHeader title="Historique d'Approbation" />
-          <CardBody>
-            <div className="space-y-4">
-              {approvalHistory.map((entry) => (
-                <div key={entry.id} className="flex gap-4 pb-4 border-b border-neutral-200 last:border-0">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-primary-600 font-semibold text-sm">
-                        {entry.action.charAt(0)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-neutral-900">{entry.action}</p>
-                    <p className="text-sm text-neutral-600">
-                      par {entry.user} ({entry.role})
-                    </p>
-                    <p className="text-xs text-neutral-500 mt-1">{entry.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </CardBody>
         </Card>
 
@@ -314,17 +286,11 @@ export const RequestDetailsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <Alert type="success">
-            Cela approuvera la demande et ajoutera les articles à la file d'attente des bons de commande.
+            Cela approuvera la demande et déduira automatiquement les quantités du stock.
           </Alert>
           <div className="bg-neutral-50 p-4 rounded-lg">
             <p className="text-sm text-neutral-600">Numéro de Demande</p>
-            <p className="font-semibold text-neutral-900">{mockRequest.requestNumber}</p>
-          </div>
-          <div className="bg-neutral-50 p-4 rounded-lg">
-            <p className="text-sm text-neutral-600">Coût Estimé Total</p>
-            <p className="font-semibold text-neutral-900">
-              €{totalEstimatedCost.toFixed(2)}
-            </p>
+            <p className="font-semibold text-neutral-900">{request.requestNumber}</p>
           </div>
         </div>
       </Modal>
@@ -346,7 +312,7 @@ export const RequestDetailsPage: React.FC = () => {
           </Alert>
           <Textarea
             label="Raison du Rejet"
-            placeholder="Expliquez pourquoi cette demande est rejetée..."
+            placeholder="Expliquez pourquoi cette demande est refusée..."
             rows={4}
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}

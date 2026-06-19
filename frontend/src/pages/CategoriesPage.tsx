@@ -3,7 +3,7 @@
  * Manage product categories
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
@@ -13,65 +13,100 @@ import { Modal } from '@components/Modal';
 import { Input, Textarea, Select } from '@components/FormInputs';
 import { Badge } from '@components/Badge';
 import type { Category } from '@/types/catalog';
+import { catalogService } from '@/services/catalogService';
 
 export const CategoriesPage: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const mockCategories: Category[] = [
-    {
-      id: 'cat-001',
-      name: 'Paper',
-      description: 'Paper products and stationery',
-      code: 'PAP',
-      itemCount: 12,
+  // Form states
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    code: '',
+    status: 'active' as 'active' | 'inactive',
+  });
+
+  const fetchCategories = async () => {
+    try {
+      const data = await catalogService.getCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      code: '',
       status: 'active',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-06-10',
-    },
-    {
-      id: 'cat-002',
-      name: 'Writing Supplies',
-      description: 'Pens, pencils, markers',
-      code: 'WRI',
-      itemCount: 25,
-      status: 'active',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-06-09',
-    },
-    {
-      id: 'cat-003',
-      name: 'Filing',
-      description: 'Folders, binders, filing systems',
-      code: 'FIL',
-      itemCount: 8,
-      status: 'active',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-06-08',
-    },
-    {
-      id: 'cat-004',
-      name: 'Office Equipment',
-      description: 'Staplers, hole punches, etc',
-      code: 'EQU',
-      itemCount: 15,
-      status: 'active',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-06-07',
-    },
-    {
-      id: 'cat-005',
-      name: 'Stationery',
-      description: 'Notepads, sticky notes',
-      code: 'STA',
-      itemCount: 0,
-      status: 'inactive',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-06-06',
-    },
-  ];
+    });
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (category: Category) => {
+    setSelectedCategory(category);
+    setFormData({
+      name: category.name,
+      description: category.description || '',
+      code: category.code || '',
+      status: category.status,
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleCreateCategory = async () => {
+    if (!formData.name) {
+      alert("Le nom est obligatoire");
+      return;
+    }
+    try {
+      await catalogService.createCategory(formData);
+      setIsCreateModalOpen(false);
+      resetForm();
+      fetchCategories();
+    } catch (err: any) {
+      alert('Erreur lors de la création: ' + err.message);
+    }
+  };
+
+  const handleEditCategory = async () => {
+    if (!selectedCategory || !formData.name) return;
+    try {
+      await catalogService.updateCategory(selectedCategory.id, formData);
+      setIsEditModalOpen(false);
+      setSelectedCategory(null);
+      resetForm();
+      fetchCategories();
+    } catch (err: any) {
+      alert('Erreur lors de la modification: ' + err.message);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!selectedCategory) return;
+    try {
+      await catalogService.deleteCategory(selectedCategory.id);
+      setIsDeleting(false);
+      setSelectedCategory(null);
+      fetchCategories();
+    } catch (err: any) {
+      alert('Erreur lors de la suppression: ' + err.message);
+    }
+  };
 
   const columns = [
     {
@@ -116,39 +151,27 @@ export const CategoriesPage: React.FC = () => {
       label: 'Actions',
       sortable: false,
       width: '150px',
-      render: (_value: string, row: Category) => (
+      render: (_value: number, row: Category) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             icon={<Edit2 size={16} />}
-            onClick={() => {
-              setSelectedCategory(row);
-              setIsEditModalOpen(true);
-            }}
+            onClick={() => openEditModal(row)}
           />
           <Button
             variant="danger"
             size="sm"
             icon={<Trash2 size={16} />}
-            onClick={() => setIsDeleting(true)}
+            onClick={() => {
+              setSelectedCategory(row);
+              setIsDeleting(true);
+            }}
           />
         </div>
       ),
     },
   ];
-
-  const handleCreateCategory = () => {
-    setIsCreateModalOpen(false);
-  };
-
-  const handleEditCategory = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const handleDeleteCategory = () => {
-    setIsDeleting(false);
-  };
 
   return (
     <MainLayout title="Catégories">
@@ -162,7 +185,7 @@ export const CategoriesPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus size={20} />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={openCreateModal}
           >
             Ajouter une Catégorie
           </Button>
@@ -175,7 +198,7 @@ export const CategoriesPage: React.FC = () => {
               <div className="text-center">
                 <p className="text-sm text-neutral-600">Catégories Totales</p>
                 <p className="text-3xl font-bold text-neutral-900 mt-2">
-                  {mockCategories.length}
+                  {categories.length}
                 </p>
               </div>
             </CardBody>
@@ -185,7 +208,7 @@ export const CategoriesPage: React.FC = () => {
               <div className="text-center">
                 <p className="text-sm text-neutral-600">Catégories Actives</p>
                 <p className="text-3xl font-bold text-neutral-900 mt-2">
-                  {mockCategories.filter((c) => c.status === 'active').length}
+                  {categories.filter((c) => c.status === 'active').length}
                 </p>
               </div>
             </CardBody>
@@ -195,7 +218,7 @@ export const CategoriesPage: React.FC = () => {
               <div className="text-center">
                 <p className="text-sm text-neutral-600">Articles Totaux</p>
                 <p className="text-3xl font-bold text-neutral-900 mt-2">
-                  {mockCategories.reduce((sum, c) => sum + (c.itemCount || 0), 0)}
+                  {categories.reduce((sum, c) => sum + (c.itemCount || 0), 0)}
                 </p>
               </div>
             </CardBody>
@@ -204,11 +227,11 @@ export const CategoriesPage: React.FC = () => {
 
         {/* Data Table */}
         <Card>
-          <CardHeader title={`Catégories (${mockCategories.length})`} />
+          <CardHeader title={`Catégories (${categories.length})`} />
           <CardBody>
             <DataTable<Category>
               columns={columns}
-              data={mockCategories}
+              data={categories}
               rowKey="id"
               pageSize={10}
             />
@@ -224,18 +247,38 @@ export const CategoriesPage: React.FC = () => {
         onConfirm={handleCreateCategory}
         confirmText="Créer"
       >
-        <form className="space-y-4">
-          <Input label="Code Catégorie" placeholder="ex. PAP" maxLength={10} />
-          <Input label="Nom Catégorie" placeholder="ex. Produits en papier" />
-          <Textarea label="Description" placeholder="Description de la catégorie" rows={3} />
+        <div className="space-y-4">
+          <Input 
+            label="Code Catégorie" 
+            placeholder="ex. PAP" 
+            maxLength={10}
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+          />
+          <Input 
+            label="Nom Catégorie" 
+            placeholder="ex. Produits en papier" 
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+          <Textarea 
+            label="Description" 
+            placeholder="Description de la catégorie" 
+            rows={3} 
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
           <Select
             label="Statut"
             options={[
               { value: 'active', label: 'Actif' },
               { value: 'inactive', label: 'Inactif' },
             ]}
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
           />
-        </form>
+        </div>
       </Modal>
 
       {/* Edit Modal */}
@@ -250,13 +293,24 @@ export const CategoriesPage: React.FC = () => {
           onConfirm={handleEditCategory}
           confirmText="Mettre à jour"
         >
-          <form className="space-y-4">
-            <Input label="Code Catégorie" defaultValue={selectedCategory.code} maxLength={10} />
-            <Input label="Nom Catégorie" defaultValue={selectedCategory.name} />
+          <div className="space-y-4">
+            <Input 
+              label="Code Catégorie" 
+              maxLength={10} 
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            />
+            <Input 
+              label="Nom Catégorie" 
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
             <Textarea
               label="Description"
-              defaultValue={selectedCategory.description}
               rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
             <div className="flex items-center gap-2 p-3 bg-neutral-50 rounded-lg">
               <span className="text-sm font-medium text-neutral-700">Articles dans la catégorie :</span>
@@ -268,9 +322,10 @@ export const CategoriesPage: React.FC = () => {
                 { value: 'active', label: 'Actif' },
                 { value: 'inactive', label: 'Inactif' },
               ]}
-              defaultValue={selectedCategory.status}
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
             />
-          </form>
+          </div>
         </Modal>
       )}
 
@@ -284,11 +339,12 @@ export const CategoriesPage: React.FC = () => {
       >
         <p className="text-neutral-700">
           Êtes-vous sûr de vouloir supprimer cette catégorie ? Cette action est irréversible.
-          {selectedCategory?.itemCount && selectedCategory.itemCount > 0 && (
-            <span className="block mt-2 text-red-600">
+          {selectedCategory?.itemCount && selectedCategory.itemCount > 0 ? (
+            <span className="block mt-2 text-red-600 font-semibold">
               Avertissement : Cette catégorie contient {selectedCategory.itemCount} articles.
+              La suppression échouera si la base de données empêche la suppression des catégories non vides.
             </span>
-          )}
+          ) : null}
         </p>
       </Modal>
     </MainLayout>

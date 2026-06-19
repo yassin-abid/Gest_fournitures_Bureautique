@@ -3,7 +3,7 @@
  * Shows list of articles with search, filter, and CRUD operations
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
@@ -14,136 +14,144 @@ import { Badge } from '@components/Badge';
 import { Modal } from '@components/Modal';
 import { Alert } from '@components/Alert';
 import { Input, Select, Textarea } from '@components/FormInputs';
-import type { Article } from '@/types/catalog';
+import type { Article, Category, Supplier } from '@/types/catalog';
+import { catalogService } from '@/services/catalogService';
 
 export const ArticlesPage: React.FC = () => {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSupplier, setSelectedSupplier] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<number | ''>('');
+  const [selectedSupplier, setSelectedSupplier] = useState<number | ''>('');
+
+  // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const mockArticles: Article[] = [
-    {
-      id: 'art-001',
-      code: 'OFF-001',
-      name: 'A4 Paper (500 sheets)',
-      description: 'Standard white copy paper',
-      categoryId: 'cat-001',
-      categoryName: 'Paper',
-      supplierId: 'sup-001',
-      supplierName: 'Office Pro',
-      unit: 'Ream',
-      unitPrice: 5.99,
-      quantity: 450,
-      minStock: 100,
-      maxStock: 500,
-      status: 'active',
-      createdAt: '2024-06-01',
-      updatedAt: '2024-06-10',
-    },
-    {
-      id: 'art-002',
-      code: 'PEN-001',
-      name: 'Ballpoint Pen (Blue)',
-      description: 'Professional ballpoint pen',
-      categoryId: 'cat-002',
-      categoryName: 'Writing Supplies',
-      supplierId: 'sup-002',
-      supplierName: 'Supplies Plus',
-      unit: 'Box',
-      unitPrice: 12.50,
-      quantity: 75,
-      minStock: 50,
-      maxStock: 200,
-      status: 'active',
-      createdAt: '2024-06-02',
-      updatedAt: '2024-06-09',
-    },
-    {
-      id: 'art-003',
-      code: 'FOLDER-001',
-      name: 'File Folder (Yellow)',
-      description: 'Legal size folder',
-      categoryId: 'cat-003',
-      categoryName: 'Filing',
-      supplierId: 'sup-001',
-      supplierName: 'Office Pro',
-      unit: 'Pack',
-      unitPrice: 8.75,
-      quantity: 120,
-      minStock: 80,
-      maxStock: 300,
-      status: 'active',
-      createdAt: '2024-06-03',
-      updatedAt: '2024-06-08',
-    },
-    {
-      id: 'art-004',
-      code: 'STAPLER-001',
-      name: 'Stapler (Desktop)',
-      description: 'Heavy-duty stapler',
-      categoryId: 'cat-004',
-      categoryName: 'Office Equipment',
-      supplierId: 'sup-003',
-      supplierName: 'Tech Store',
-      unit: 'Piece',
-      unitPrice: 25.00,
-      quantity: 15,
-      minStock: 5,
-      maxStock: 30,
-      status: 'active',
-      createdAt: '2024-06-04',
-      updatedAt: '2024-06-07',
-    },
-    {
-      id: 'art-005',
-      code: 'NOTEBOOK-001',
-      name: 'Notebook (Ruled)',
-      description: 'A5 ruled notebook',
-      categoryId: 'cat-005',
-      categoryName: 'Stationery',
-      supplierId: 'sup-002',
-      supplierName: 'Supplies Plus',
-      unit: 'Pack',
-      unitPrice: 3.50,
-      quantity: 200,
-      minStock: 100,
-      maxStock: 500,
-      status: 'inactive',
-      createdAt: '2024-06-05',
-      updatedAt: '2024-06-06',
-    },
-  ];
+  // Form states
+  const [formData, setFormData] = useState({
+    code: '',
+    name: '',
+    description: '',
+    categoryId: 0,
+    supplierId: 0,
+    unit: '',
+    unitPrice: 0,
+    quantity: 0,
+    minStock: 0,
+    maxStock: 0,
+    status: 'active' as 'active' | 'inactive',
+  });
 
-  const mockCategories = [
-    { value: '', label: 'Toutes les catégories' },
-    { value: 'cat-001', label: 'Papier' },
-    { value: 'cat-002', label: 'Fournitures d\'écriture' },
-    { value: 'cat-003', label: 'Classement' },
-    { value: 'cat-004', label: 'Équipement de bureau' },
-    { value: 'cat-005', label: 'Papeterie' },
-  ];
+  const fetchData = async () => {
+    try {
+      const [articlesData, categoriesData, suppliersData] = await Promise.all([
+        catalogService.getArticles(1, 100),
+        catalogService.getCategories(),
+        catalogService.getSuppliers(1, 100),
+      ]);
+      setArticles(articlesData.data);
+      setCategories(categoriesData);
+      setSuppliers(suppliersData.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  const mockSuppliers = [
-    { value: '', label: 'Tous les fournisseurs' },
-    { value: 'sup-001', label: 'Office Pro' },
-    { value: 'sup-002', label: 'Supplies Plus' },
-    { value: 'sup-003', label: 'Tech Store' },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const filteredArticles = useMemo(() => {
-    return mockArticles.filter((article) => {
-      const matchesSearch =
-        article.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.code.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || article.categoryId === selectedCategory;
-      const matchesSupplier = !selectedSupplier || article.supplierId === selectedSupplier;
-      return matchesSearch && matchesCategory && matchesSupplier;
+  const filteredArticles = articles.filter((article) => {
+    const matchesSearch =
+      (article.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (article.code || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === '' || article.categoryId === Number(selectedCategory);
+    const matchesSupplier = selectedSupplier === '' || article.supplierId === Number(selectedSupplier);
+    return matchesSearch && matchesCategory && matchesSupplier;
+  });
+
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      description: '',
+      categoryId: 0,
+      supplierId: 0,
+      unit: '',
+      unitPrice: 0,
+      quantity: 0,
+      minStock: 0,
+      maxStock: 0,
+      status: 'active',
     });
-  }, [searchTerm, selectedCategory, selectedSupplier]);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (article: Article) => {
+    setSelectedArticle(article);
+    setFormData({
+      code: article.code || '',
+      name: article.name || '',
+      description: article.description || '',
+      categoryId: article.categoryId || 0,
+      supplierId: article.supplierId || 0,
+      unit: article.unit || '',
+      unitPrice: article.unitPrice || 0,
+      quantity: article.quantity || 0,
+      minStock: article.minStock || 0,
+      maxStock: article.maxStock || 0,
+      status: article.status || 'active',
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleCreateArticle = async () => {
+    if (!formData.name || !formData.code || !formData.categoryId) {
+      alert("Veuillez remplir les champs obligatoires (Code, Nom, Catégorie).");
+      return;
+    }
+    try {
+      await catalogService.createArticle(formData);
+      setIsCreateModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const handleEditArticle = async () => {
+    if (!selectedArticle) return;
+    try {
+      await catalogService.updateArticle(selectedArticle.id, formData);
+      setIsEditModalOpen(false);
+      setSelectedArticle(null);
+      fetchData();
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const handleDeleteArticle = async () => {
+    if (!selectedArticle) return;
+    try {
+      await catalogService.deleteArticle(selectedArticle.id);
+      setIsDeleting(false);
+      setSelectedArticle(null);
+      fetchData();
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
 
   const columns = [
     {
@@ -172,7 +180,7 @@ export const ArticlesPage: React.FC = () => {
       key: 'unitPrice' as const,
       label: 'Prix Unitaire',
       sortable: true,
-      render: (value: number) => `€${value.toFixed(2)}`,
+      render: (value: number) => `€${(value || 0).toFixed(2)}`,
     },
     {
       key: 'quantity' as const,
@@ -198,39 +206,37 @@ export const ArticlesPage: React.FC = () => {
       key: 'id' as const,
       label: 'Actions',
       sortable: false,
-      render: (_value: string, row: Article) => (
+      render: (_value: number, row: Article) => (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             icon={<Edit2 size={16} />}
-            onClick={() => {
-              setSelectedArticle(row);
-              setIsEditModalOpen(true);
-            }}
+            onClick={() => openEditModal(row)}
           />
           <Button
             variant="danger"
             size="sm"
             icon={<Trash2 size={16} />}
-            onClick={() => setIsDeleting(true)}
+            onClick={() => {
+              setSelectedArticle(row);
+              setIsDeleting(true);
+            }}
           />
         </div>
       ),
     },
   ];
 
-  const handleCreateArticle = () => {
-    setIsCreateModalOpen(false);
-  };
+  const categoryOptions = [
+    { value: '', label: 'Toutes les catégories' },
+    ...categories.map(c => ({ value: c.id.toString(), label: c.name }))
+  ];
 
-  const handleEditArticle = () => {
-    setIsEditModalOpen(false);
-  };
-
-  const handleDeleteArticle = () => {
-    setIsDeleting(false);
-  };
+  const supplierOptions = [
+    { value: '', label: 'Tous les fournisseurs' },
+    ...suppliers.map(s => ({ value: s.id.toString(), label: s.name }))
+  ];
 
   return (
     <MainLayout title="Articles">
@@ -244,7 +250,7 @@ export const ArticlesPage: React.FC = () => {
           <Button
             variant="primary"
             icon={<Plus size={20} />}
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={openCreateModal}
           >
             Ajouter un Article
           </Button>
@@ -269,15 +275,15 @@ export const ArticlesPage: React.FC = () => {
                   />
                 </div>
                 <Select
-                  options={mockCategories}
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  options={categoryOptions}
+                  value={selectedCategory.toString()}
+                  onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : '')}
                   className="w-full md:w-48"
                 />
                 <Select
-                  options={mockSuppliers}
-                  value={selectedSupplier}
-                  onChange={(e) => setSelectedSupplier(e.target.value)}
+                  options={supplierOptions}
+                  value={selectedSupplier.toString()}
+                  onChange={(e) => setSelectedSupplier(e.target.value ? Number(e.target.value) : '')}
                   className="w-full md:w-48"
                 />
               </div>
@@ -291,7 +297,7 @@ export const ArticlesPage: React.FC = () => {
           <CardBody>
             {filteredArticles.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-neutral-600">Aucun article correspondant à vos critères de recherche n'a été trouvé.</p>
+                <p className="text-neutral-600">Aucun article trouvé.</p>
               </div>
             ) : (
               <DataTable<Article>
@@ -314,34 +320,80 @@ export const ArticlesPage: React.FC = () => {
         onConfirm={handleCreateArticle}
         confirmText="Créer"
       >
-        <form className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Code de l'Article" placeholder="ex. OFF-001" />
-            <Input label="Nom de l'Article" placeholder="ex. Papier A4" />
+            <Input 
+              label="Code de l'Article *" 
+              placeholder="ex. OFF-001" 
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              required
+            />
+            <Input 
+              label="Nom de l'Article *" 
+              placeholder="ex. Papier A4" 
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
           </div>
-          <Textarea label="Description" placeholder="Description de l'article" rows={3} />
+          <Textarea 
+            label="Description" 
+            placeholder="Description de l'article" 
+            rows={3} 
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
-              label="Catégorie"
-              options={mockCategories.slice(1)}
-              placeholder="Sélectionner une catégorie"
+              label="Catégorie *"
+              options={categoryOptions.slice(1)}
+              value={formData.categoryId?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
             />
             <Select
               label="Fournisseur"
-              options={mockSuppliers.slice(1)}
-              placeholder="Sélectionner un fournisseur"
+              options={supplierOptions.slice(1)}
+              value={formData.supplierId?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, supplierId: Number(e.target.value) })}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input label="Unité" placeholder="ex. Boîte, Rame" />
-            <Input label="Prix Unitaire" type="number" step="0.01" placeholder="0.00" />
-            <Input label="Quantité" type="number" placeholder="0" />
+            <Input 
+              label="Unité" 
+              placeholder="ex. Boîte, Rame" 
+              value={formData.unit}
+              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+            />
+            <Input 
+              label="Prix Unitaire" 
+              type="number" 
+              step="0.01" 
+              value={formData.unitPrice?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })}
+            />
+            <Input 
+              label="Quantité Initiale" 
+              type="number" 
+              value={formData.quantity?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input label="Stock Min" type="number" placeholder="0" />
-            <Input label="Stock Max" type="number" placeholder="0" />
+            <Input 
+              label="Stock Min" 
+              type="number" 
+              value={formData.minStock?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
+            />
+            <Input 
+              label="Stock Max" 
+              type="number" 
+              value={formData.maxStock?.toString() || ''}
+              onChange={(e) => setFormData({ ...formData, maxStock: parseInt(e.target.value) || 0 })}
+            />
           </div>
-        </form>
+        </div>
       </Modal>
 
       {/* Edit Modal */}
@@ -357,41 +409,72 @@ export const ArticlesPage: React.FC = () => {
           onConfirm={handleEditArticle}
           confirmText="Mettre à jour"
         >
-          <form className="space-y-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Code de l'Article" defaultValue={selectedArticle.code} />
-              <Input label="Nom de l'Article" defaultValue={selectedArticle.name} />
+              <Input 
+                label="Code de l'Article *" 
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              />
+              <Input 
+                label="Nom de l'Article *" 
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
             </div>
             <Textarea
               label="Description"
-              defaultValue={selectedArticle.description}
               rows={3}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
-                label="Catégorie"
-                options={mockCategories.slice(1)}
-                defaultValue={selectedArticle.categoryId}
+                label="Catégorie *"
+                options={categoryOptions.slice(1)}
+                value={formData.categoryId?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, categoryId: Number(e.target.value) })}
               />
               <Select
                 label="Fournisseur"
-                options={mockSuppliers.slice(1)}
-                defaultValue={selectedArticle.supplierId}
+                options={supplierOptions.slice(1)}
+                value={formData.supplierId?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, supplierId: Number(e.target.value) })}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input label="Unité" defaultValue={selectedArticle.unit} />
+              <Input 
+                label="Unité" 
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+              />
               <Input
                 label="Prix Unitaire"
                 type="number"
                 step="0.01"
-                defaultValue={selectedArticle.unitPrice}
+                value={formData.unitPrice?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })}
               />
-              <Input label="Quantité" type="number" defaultValue={selectedArticle.quantity} />
+              <Input 
+                label="Quantité" 
+                type="number" 
+                value={formData.quantity?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+              />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Stock Min" type="number" defaultValue={selectedArticle.minStock} />
-              <Input label="Stock Max" type="number" defaultValue={selectedArticle.maxStock} />
+              <Input 
+                label="Stock Min" 
+                type="number" 
+                value={formData.minStock?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
+              />
+              <Input 
+                label="Stock Max" 
+                type="number" 
+                value={formData.maxStock?.toString() || ''}
+                onChange={(e) => setFormData({ ...formData, maxStock: parseInt(e.target.value) || 0 })}
+              />
             </div>
             <Select
               label="Statut"
@@ -399,9 +482,10 @@ export const ArticlesPage: React.FC = () => {
                 { value: 'active', label: 'Actif' },
                 { value: 'inactive', label: 'Inactif' },
               ]}
-              defaultValue={selectedArticle.status}
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
             />
-          </form>
+          </div>
         </Modal>
       )}
 
@@ -409,12 +493,12 @@ export const ArticlesPage: React.FC = () => {
       <Modal
         isOpen={isDeleting}
         onClose={() => setIsDeleting(false)}
-        title="Supprimer l'Article"
+        title="Désactiver l'Article"
         onConfirm={handleDeleteArticle}
-        confirmText="Supprimer"
+        confirmText="Désactiver"
       >
         <p className="text-neutral-700">
-          Êtes-vous sûr de vouloir supprimer cet article ? Cette action est irréversible.
+          Êtes-vous sûr de vouloir désactiver cet article ? Il ne sera plus disponible pour les nouvelles commandes.
         </p>
       </Modal>
     </MainLayout>

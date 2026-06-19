@@ -3,17 +3,22 @@
  * Form to create new supply request
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody, CardFooter } from '@components/Card';
 import { Button } from '@components/Button';
 import { Input, Select, Textarea } from '@components/FormInputs';
 import { Badge } from '@components/Badge';
+import { requestsService } from '@services/requestsService';
+import { catalogService } from '@services/catalogService';
+import type { RequestPriority } from '@/types/requests';
+import type { Article } from '@/types/catalog';
 
-interface RequestItem {
-  id: string;
-  articleId: string;
+interface FormItem {
+  id: string; // local temporary id
+  articleId: number;
   articleName: string;
   quantity: number;
   estimatedCost: number;
@@ -21,25 +26,33 @@ interface RequestItem {
 }
 
 export const CreateRequestPage: React.FC = () => {
-  const [priority, setPriority] = useState('medium');
+  const navigate = useNavigate();
+  const [priority, setPriority] = useState<RequestPriority>('normale');
   const [justification, setJustification] = useState('');
-  const [items, setItems] = useState<RequestItem[]>([]);
+  const [items, setItems] = useState<FormItem[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  
   const [newItemArticle, setNewItemArticle] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
-  const [newItemCost, setNewItemCost] = useState('');
   const [newItemNotes, setNewItemNotes] = useState('');
 
-  const mockArticles = [
-    { value: 'art-001', label: 'A4 Paper (500 sheets) - €5.99' },
-    { value: 'art-002', label: 'Ballpoint Pen (Blue) - €12.50' },
-    { value: 'art-003', label: 'File Folder (Yellow) - €8.75' },
-    { value: 'art-004', label: 'Stapler (Desktop) - €25.00' },
-    { value: 'art-005', label: 'Notebook (Ruled) - €3.50' },
-  ];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const getArticleName = (articleId: string) => {
-    const article = mockArticles.find((a) => a.value === articleId);
-    return article?.label?.split(' - ')[0] || '';
+  useEffect(() => {
+    // Fetch available articles
+    const fetchArticles = async () => {
+      try {
+        const res = await catalogService.getArticles(1, 500); // Fetch a lot to populate dropdown
+        setArticles(res.data);
+      } catch (err) {
+        console.error('Error fetching articles', err);
+      }
+    };
+    fetchArticles();
+  }, []);
+
+  const getArticle = (articleId: number) => {
+    return articles.find((a) => Number(a.id) === articleId);
   };
 
   const addItem = () => {
@@ -48,19 +61,25 @@ export const CreateRequestPage: React.FC = () => {
       return;
     }
 
-    const newItem: RequestItem = {
+    const articleId = Number(newItemArticle);
+    const article = getArticle(articleId);
+    if (!article) return;
+
+    const quantity = parseInt(newItemQuantity);
+    const estimatedCost = (article.unitPrice || 0) * quantity;
+
+    const newItem: FormItem = {
       id: `item-${Date.now()}`,
-      articleId: newItemArticle,
-      articleName: getArticleName(newItemArticle),
-      quantity: parseInt(newItemQuantity),
-      estimatedCost: parseFloat(newItemCost) || 0,
+      articleId,
+      articleName: article.name,
+      quantity,
+      estimatedCost,
       notes: newItemNotes,
     };
 
     setItems([...items, newItem]);
     setNewItemArticle('');
     setNewItemQuantity('');
-    setNewItemCost('');
     setNewItemNotes('');
   };
 
@@ -70,11 +89,7 @@ export const CreateRequestPage: React.FC = () => {
 
   const totalEstimatedCost = items.reduce((sum, item) => sum + item.estimatedCost, 0);
 
-  const handleSaveDraft = () => {
-    alert('Demande enregistrée comme brouillon');
-  };
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!justification.trim()) {
       alert('Veuillez fournir une justification');
       return;
@@ -83,8 +98,31 @@ export const CreateRequestPage: React.FC = () => {
       alert('Veuillez ajouter au moins un article');
       return;
     }
-    alert('Demande soumise avec succès');
+
+    setIsSubmitting(true);
+    try {
+      await requestsService.createRequest({
+        priority,
+        justification,
+        items: items.map(i => ({
+          articleId: i.articleId,
+          quantity: i.quantity,
+          notes: i.notes,
+        })),
+      });
+      alert('Demande soumise avec succès');
+      navigate('/requests');
+    } catch (error: any) {
+      alert('Erreur: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const articleOptions = [
+    { value: '', label: 'Sélectionner un article' },
+    ...articles.map(a => ({ value: a.id.toString(), label: `${a.name} - €${(a.unitPrice || 0).toFixed(2)}` }))
+  ];
 
   return (
     <MainLayout title="Créer une Demande de Fournitures">
@@ -95,7 +133,7 @@ export const CreateRequestPage: React.FC = () => {
             variant="ghost"
             size="sm"
             icon={<ArrowLeft size={20} />}
-            onClick={() => window.history.back()}
+            onClick={() => navigate('/requests')}
           >
             Retour
           </Button>
@@ -114,13 +152,13 @@ export const CreateRequestPage: React.FC = () => {
                 <Select
                   label="Priorité"
                   options={[
-                    { value: 'urgent', label: 'Urgent' },
-                    { value: 'high', label: 'Haute' },
-                    { value: 'medium', label: 'Moyenne' },
-                    { value: 'low', label: 'Basse' },
+                    { value: 'urgente', label: 'Urgente' },
+                    { value: 'haute', label: 'Haute' },
+                    { value: 'normale', label: 'Normale' },
+                    { value: 'basse', label: 'Basse' },
                   ]}
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e) => setPriority(e.target.value as RequestPriority)}
                 />
                 <div className="pt-6">
                   <Badge variant="info">
@@ -148,7 +186,7 @@ export const CreateRequestPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="Article *"
-                  options={[{ value: '', label: 'Sélectionner un article' }, ...mockArticles]}
+                  options={articleOptions}
                   value={newItemArticle}
                   onChange={(e) => setNewItemArticle(e.target.value)}
                 />
@@ -163,17 +201,9 @@ export const CreateRequestPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Coût Estimé (€)"
-                  type="number"
-                  step="0.01"
-                  value={newItemCost}
-                  onChange={(e) => setNewItemCost(e.target.value)}
-                  placeholder="0.00"
-                />
                 <Textarea
                   label="Notes"
-                  placeholder="Notes particulières..."
+                  placeholder="Notes particulières pour cet article..."
                   rows={1}
                   value={newItemNotes}
                   onChange={(e) => setNewItemNotes(e.target.value)}
@@ -236,16 +266,13 @@ export const CreateRequestPage: React.FC = () => {
         {/* Actions */}
         <Card>
           <CardFooter>
-            <Button variant="ghost" onClick={() => window.history.back()}>
+            <Button variant="ghost" onClick={() => navigate('/requests')}>
               Annuler
-            </Button>
-            <Button variant="secondary" onClick={handleSaveDraft}>
-              Enregistrer comme Brouillon
             </Button>
             <Button
               variant="primary"
               onClick={handleSubmit}
-              disabled={items.length === 0 || !justification.trim()}
+              disabled={items.length === 0 || !justification.trim() || isSubmitting}
             >
               Soumettre la Demande
             </Button>
