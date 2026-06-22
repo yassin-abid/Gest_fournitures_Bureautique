@@ -1,12 +1,12 @@
-import { prisma } from '@config/database';
-import { hashPassword, comparePassword } from '@utils/password';
+import { prisma } from '../../config/database';
+import { hashPassword, comparePassword } from '../../utils/password';
 import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
   getRefreshExpiryDate,
-} from '@utils/jwt';
-import { AppError } from '@middleware/errorHandler';
+} from '../../utils/jwt';
+import { AppError } from '../../middleware/errorHandler';
 
 const formatUser = (user: any) => ({
   id: user.id,

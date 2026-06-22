@@ -1,6 +1,6 @@
-import { prisma } from '@config/database';
-import { AppError } from '@middleware/errorHandler';
-import { getPrismaSkip, buildPaginatedResult } from '@utils/pagination';
+import { prisma } from '../../config/database';
+import { AppError } from '../../middleware/errorHandler';
+import { getPrismaSkip, buildPaginatedResult } from '../../utils/pagination';
 
 export const requestsService = {
   async getAll(page: number, limit: number, status?: string, userId?: number, role?: string) {

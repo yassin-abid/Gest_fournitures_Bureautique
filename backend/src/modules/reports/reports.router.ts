@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { reportsService } from './reports.service';
-import { authenticate } from '@middleware/auth';
+import { authenticate } from '../../middleware/auth';
 
 const router = Router();
 

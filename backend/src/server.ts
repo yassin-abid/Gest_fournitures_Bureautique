@@ -4,16 +4,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import { errorHandler } from '@middleware/errorHandler';
+import { errorHandler } from './middleware/errorHandler';
 
 // Routers
-import authRouter from '@modules/auth/auth.router';
-import catalogRouter from '@modules/catalog/catalog.router';
-import requestsRouter from '@modules/requests/requests.router';
-import ordersRouter from '@modules/orders/orders.router';
-import stockRouter from '@modules/stock/stock.router';
-import adminRouter from '@modules/admin/admin.router';
-import reportsRouter from '@modules/reports/reports.router';
+import authRouter from './modules/auth/auth.router';
+import catalogRouter from './modules/catalog/catalog.router';
+import requestsRouter from './modules/requests/requests.router';
+import ordersRouter from './modules/orders/orders.router';
+import stockRouter from './modules/stock/stock.router';
+import adminRouter from './modules/admin/admin.router';
+import reportsRouter from './modules/reports/reports.router';
 
 const app = express();
 

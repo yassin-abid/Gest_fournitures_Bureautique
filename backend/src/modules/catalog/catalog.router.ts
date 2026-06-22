@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { articleService, categoryService, supplierService } from './catalog.service';
-import { authenticate } from '@middleware/auth';
-import { audit } from '@middleware/audit';
+import { authenticate } from '../../middleware/auth';
+import { audit } from '../../middleware/audit';
 
 const router = Router();
 

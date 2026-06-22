@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { adminService } from './admin.service';
-import { authenticate } from '@middleware/auth';
-import { adminOnly } from '@middleware/roles';
-import { audit } from '@middleware/audit';
+import { authenticate } from '../../middleware/auth';
+import { adminOnly } from '../../middleware/roles';
+import { audit } from '../../middleware/audit';
 
 const router = Router();
 

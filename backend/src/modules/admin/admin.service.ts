@@ -1,7 +1,7 @@
-import { prisma } from '@config/database';
-import { AppError } from '@middleware/errorHandler';
-import { getPrismaSkip, buildPaginatedResult } from '@utils/pagination';
-import { hashPassword } from '@utils/password';
+import { prisma } from '../../config/database';
+import { AppError } from '../../middleware/errorHandler';
+import { getPrismaSkip, buildPaginatedResult } from '../../utils/pagination';
+import { hashPassword } from '../../utils/password';
 
 const formatUser = (u: any) => ({
   id: u.id,

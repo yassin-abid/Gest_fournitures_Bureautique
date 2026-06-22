@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
-import { authenticate, AuthRequest } from '@middleware/auth';
-import { validate } from '@middleware/validate';
+import { authenticate, AuthRequest } from '../../middleware/auth';
+import { validate } from '../../middleware/validate';
 import {
   loginSchema,
   registerSchema,
