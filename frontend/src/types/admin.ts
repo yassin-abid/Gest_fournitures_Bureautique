@@ -34,14 +34,12 @@ export interface SystemSettings {
 }
 
 export interface AuditLog {
-  id: string;
-  userId: string;
-  userName: string;
+  id: number;
+  userId: number;
+  userName?: string;
   action: string;
-  entityType: string;
-  entityId: string;
-  oldValues?: Record<string, any>;
-  newValues?: Record<string, any>;
+  entity: string;
+  entityId: number | null;
+  details: string | null;
   timestamp: string;
-  status: 'success' | 'failed';
 }

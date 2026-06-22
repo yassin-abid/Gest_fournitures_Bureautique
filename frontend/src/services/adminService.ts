@@ -96,7 +96,7 @@ export const adminService = {
 
   // Audit Logs
   getAuditLogs: async (page = 1, limit = 20): Promise<PaginatedResponse<AuditLog>> => {
-    const response = await apiClient.get<PaginatedResponse<AuditLog>>('/admin/audit-logs', {
+    const response = await apiClient.get<PaginatedResponse<AuditLog>>('/admin/logs', {
       params: { page, limit },
     });
     return response.data;

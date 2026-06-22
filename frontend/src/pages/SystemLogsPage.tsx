@@ -3,7 +3,10 @@
  * View system activity logs and audit trails
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { adminService } from '@services/adminService';
+import type { AuditLog } from '@/types/admin';
+import { Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { DataTable } from '@components/DataTable';
@@ -11,89 +14,57 @@ import { SearchInput } from '@components/SearchInput';
 import { Badge } from '@components/Badge';
 import { Select } from '@components/FormInputs';
 
-interface LogEntry {
-  id: string;
-  timestamp: string;
-  user: string;
-  action: string;
-  module: string;
-  severity: 'info' | 'warning' | 'error' | 'critical';
-  details: string;
-}
+
 
 export const SystemLogsPage: React.FC = () => {
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModule, setSelectedModule] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState('');
+  
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockLogs: LogEntry[] = [
-    {
-      id: 'log-001',
-      timestamp: '2024-06-11 10:45:12',
-      user: 'Sonia Ben Ali',
-      action: 'Approbation Demande',
-      module: 'Demandes',
-      severity: 'info',
-      details: 'Demande REQ-002 approuvée',
-    },
-    {
-      id: 'log-002',
-      timestamp: '2024-06-11 09:30:00',
-      user: 'Mourad Gharbi',
-      action: 'Ajustement Stock',
-      module: 'Stock',
-      severity: 'warning',
-      details: 'Ajustement manuel: Papier A4 (-5)',
-    },
-    {
-      id: 'log-003',
-      timestamp: '2024-06-11 08:15:22',
-      user: 'Système',
-      action: 'Sauvegarde',
-      module: 'Système',
-      severity: 'info',
-      details: 'Sauvegarde automatique réussie (450MB)',
-    },
-    {
-      id: 'log-004',
-      timestamp: '2024-06-10 16:20:05',
-      user: 'Karim Administrateur',
-      action: 'Modification Utilisateur',
-      module: 'Administration',
-      severity: 'warning',
-      details: 'Changement de rôle pour user-005 (Employé -> Responsable)',
-    },
-    {
-      id: 'log-005',
-      timestamp: '2024-06-10 14:10:00',
-      user: 'Inconnu',
-      action: 'Tentative de Connexion Échouée',
-      module: 'Authentification',
-      severity: 'error',
-      details: '3 tentatives échouées pour resp.achats@hammemi.com',
-    },
-    {
-      id: 'log-006',
-      timestamp: '2024-06-10 11:05:45',
-      user: 'Leila Mansour',
-      action: 'Création Commande',
-      module: 'Achats',
-      severity: 'info',
-      details: 'Nouvelle commande fournisseur ORD-042 (Lyreco)',
-    },
-  ];
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await adminService.getAuditLogs(1, 100);
+        setLogs(res.data);
+      } catch (err) {
+        console.error("Erreur de chargement des logs", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
+
+  const getSeverity = (action: string) => {
+    const a = action.toLowerCase();
+    if (a.includes('delete') || a.includes('cancel') || a.includes('reject') || a.includes('hard')) return 'error';
+    if (a.includes('update') || a.includes('deactivate')) return 'warning';
+    return 'info';
+  };
 
   const filteredLogs = useMemo(() => {
-    return mockLogs.filter((log) => {
+    return logs.filter((log) => {
+      const logUser = log.userName || 'Inconnu';
+      const logAction = log.action || '';
+      const logDetails = log.details || '';
+      
       const matchesSearch =
-        log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.details.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesModule = !selectedModule || log.module === selectedModule;
-      const matchesSeverity = !selectedSeverity || log.severity === selectedSeverity;
+        logUser.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        logAction.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        logDetails.toLowerCase().includes(searchTerm.toLowerCase());
+        
+      const matchesModule = !selectedModule || log.entity === selectedModule;
+      
+      const severity = getSeverity(logAction);
+      const matchesSeverity = !selectedSeverity || severity === selectedSeverity;
+      
       return matchesSearch && matchesModule && matchesSeverity;
     });
-  }, [searchTerm, selectedModule, selectedSeverity]);
+  }, [logs, searchTerm, selectedModule, selectedSeverity]);
 
   const columns = [
     {
@@ -103,34 +74,33 @@ export const SystemLogsPage: React.FC = () => {
       width: '180px',
     },
     {
-      key: 'severity' as const,
+      key: 'action' as const, // Uses action to determine severity
       label: 'Niveau',
       sortable: true,
       width: '120px',
       render: (value: string) => {
+        const severity = getSeverity(value);
         const variantMap: Record<string, any> = {
           info: 'primary',
           warning: 'warning',
           error: 'danger',
-          critical: 'danger',
         };
         const labels: Record<string, string> = {
           info: 'Info',
           warning: 'Alerte',
           error: 'Erreur',
-          critical: 'Critique',
         };
-        return <Badge variant={variantMap[value]}>{labels[value]}</Badge>;
+        return <Badge variant={variantMap[severity]}>{labels[severity]}</Badge>;
       },
     },
     {
-      key: 'module' as const,
+      key: 'entity' as const,
       label: 'Module',
       sortable: true,
       width: '150px',
     },
     {
-      key: 'user' as const,
+      key: 'userName' as const,
       label: 'Utilisateur',
       sortable: true,
       width: '180px',
@@ -200,12 +170,18 @@ export const SystemLogsPage: React.FC = () => {
         <Card>
           <CardHeader title={`Derniers événements (${filteredLogs.length})`} />
           <CardBody>
-            <DataTable<LogEntry>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <Loader2 className="animate-spin text-primary-500" size={32} />
+              </div>
+            ) : (
+              <DataTable<AuditLog>
               columns={columns}
               data={filteredLogs}
               rowKey="id"
               pageSize={15}
-            />
+              />
+            )}
           </CardBody>
         </Card>
       </div>
