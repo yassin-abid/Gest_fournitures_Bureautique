@@ -933,7 +933,7 @@ const AdminDashboard: React.FC = () => {
         return {
           id: log.id,
           user: log.userName || 'Inconnu',
-          action: actionName + ' - ' + (log.entity || ''),
+          action: actionName + ' - ' + (log.entity || '') + (log.entityName ? ' : ' + log.entityName : (log.entityId ? ' #' + log.entityId : '')),
           time: new Date(log.timestamp).toLocaleString(),
           type,
           icon

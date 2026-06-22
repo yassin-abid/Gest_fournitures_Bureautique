@@ -40,6 +40,7 @@ export interface AuditLog {
   action: string;
   entity: string;
   entityId: number | null;
+  entityName?: string;
   details: string | null;
   timestamp: string;
 }

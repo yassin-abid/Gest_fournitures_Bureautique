@@ -206,10 +206,10 @@ export const SystemLogsPage: React.FC = () => {
     },
     {
       key: 'entity' as const,
-      render: (val: string, row: any) => formatEntity(val) + (row.entityId ? ' #' + row.entityId : ''),
-      label: 'Module',
+      render: (val: string, row: any) => formatEntity(val) + (row.entityName ? ' : ' + row.entityName : (row.entityId ? ' #' + row.entityId : '')),
+      label: 'Élément affecté',
       sortable: true,
-      width: '150px',
+      width: '180px',
     },
     {
       key: 'userName' as const,

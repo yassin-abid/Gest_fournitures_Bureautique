@@ -173,11 +173,33 @@ export const adminService = {
     const formatted = data.map((l) => {
       let entity = undefined;
       let entityId = undefined;
+      let entityName = undefined;
       try {
         if (l.details) {
           const parsed = JSON.parse(l.details);
           entity = parsed.entity;
           entityId = parsed.entityId;
+          
+          const entityData = parsed.newValues || parsed.oldValues;
+          if (entityData) {
+             if (entity === 'User' && entityData.firstName && entityData.lastName) {
+                 entityName = `${entityData.firstName} ${entityData.lastName}`;
+             } else if (entityData.name) {
+                 entityName = entityData.name;
+             } else if (entityData.nom_service) {
+                 entityName = entityData.nom_service;
+             } else if (entityData.nom_role) {
+                 entityName = entityData.nom_role;
+             } else if (entityData.nom) {
+                 entityName = entityData.nom;
+             } else if (entityData.orderNumber) {
+                 entityName = entityData.orderNumber;
+             } else if (entityData.requestNumber) {
+                 entityName = entityData.requestNumber;
+             } else if (entityData.code) {
+                 entityName = entityData.code;
+             }
+          }
         }
       } catch(e) {}
       return {
@@ -185,6 +207,7 @@ export const adminService = {
         userName: `${l.user.firstName} ${l.user.lastName}`,
         entity,
         entityId,
+        entityName,
         timestamp: l.timestamp?.toISOString() || new Date().toISOString(),
       };
     });
