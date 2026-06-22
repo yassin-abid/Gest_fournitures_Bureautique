@@ -170,11 +170,24 @@ export const adminService = {
       prisma.auditLog.count({ where }),
     ]);
 
-    const formatted = data.map((l) => ({
-      ...l,
-      userName: `${l.user.firstName} ${l.user.lastName}`,
-      timestamp: l.timestamp?.toISOString() || new Date().toISOString(),
-    }));
+    const formatted = data.map((l) => {
+      let entity = undefined;
+      let entityId = undefined;
+      try {
+        if (l.details) {
+          const parsed = JSON.parse(l.details);
+          entity = parsed.entity;
+          entityId = parsed.entityId;
+        }
+      } catch(e) {}
+      return {
+        ...l,
+        userName: `${l.user.firstName} ${l.user.lastName}`,
+        entity,
+        entityId,
+        timestamp: l.timestamp?.toISOString() || new Date().toISOString(),
+      };
+    });
 
     return buildPaginatedResult(formatted, total, page, limit);
   },

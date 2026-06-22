@@ -206,7 +206,7 @@ export const SystemLogsPage: React.FC = () => {
     },
     {
       key: 'entity' as const,
-      render: (val: string) => formatEntity(val),
+      render: (val: string, row: any) => formatEntity(val) + (row.entityId ? ' #' + row.entityId : ''),
       label: 'Module',
       sortable: true,
       width: '150px',
