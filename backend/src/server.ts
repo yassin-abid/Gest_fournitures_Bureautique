@@ -14,6 +14,7 @@ import ordersRouter from './modules/orders/orders.router';
 import stockRouter from './modules/stock/stock.router';
 import adminRouter from './modules/admin/admin.router';
 import reportsRouter from './modules/reports/reports.router';
+import analyticsRouter from './modules/analytics/analytics.router';
 
 const app = express();
 
@@ -33,6 +34,7 @@ apiRouter.use('/orders', ordersRouter);
 apiRouter.use('/stock', stockRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/reports', reportsRouter);
+apiRouter.use('/analytics', analyticsRouter);
 
 app.use('/api', apiRouter);
 

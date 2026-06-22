@@ -3,11 +3,11 @@
  * Financial dashboard, purchase history, AI forecasts, suggestions, critical stock alerts
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, TrendingDown, Target, Download,
   Brain, AlertTriangle, ShoppingCart, Lightbulb,
-  BarChart2, FileSpreadsheet, FileText,
+  BarChart2, FileSpreadsheet, FileText, Loader2
 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
@@ -15,68 +15,27 @@ import { Button } from '@components/Button';
 import { Badge } from '@components/Badge';
 import { Select } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
-
-// ── Mock data ────────────────────────────────────────────────────────────────
-
-const MONTHLY_DATA = [
-  { month: 'Jan', amount: 8200, orders: 12 },
-  { month: 'Fév', amount: 9500, orders: 14 },
-  { month: 'Mar', amount: 7800, orders: 10 },
-  { month: 'Avr', amount: 11200, orders: 16 },
-  { month: 'Mai', amount: 10400, orders: 15 },
-  { month: 'Jun', amount: 12600, orders: 18 },
-  { month: 'Juil', amount: 9800, orders: 13 },
-  { month: 'Aoû', amount: 8700, orders: 11 },
-  { month: 'Sep', amount: 13100, orders: 19 },
-  { month: 'Oct', amount: 11900, orders: 17 },
-  { month: 'Nov', amount: 14200, orders: 20 },
-  { month: 'Déc', amount: 15800, orders: 22 },
-];
-
-const CATEGORY_SPENDING = [
-  { name: 'Papeterie', amount: 28400, percentage: 34, color: 'bg-secondary' },
-  { name: 'Informatique', amount: 22100, percentage: 27, color: 'bg-primary' },
-  { name: 'Mobilier', amount: 16500, percentage: 20, color: 'bg-green-500' },
-  { name: 'Hygiène', amount: 9800, percentage: 12, color: 'bg-amber-500' },
-  { name: 'Divers', amount: 6300, percentage: 7, color: 'bg-red-400' },
-];
-
-const DEPARTMENT_SPENDING = [
-  { name: 'Commercial', amount: 12500, percentage: 26 },
-  { name: 'Ressources Humaines', amount: 9800, percentage: 21 },
-  { name: 'Finance', amount: 8750, percentage: 19 },
-  { name: 'Informatique', amount: 10200, percentage: 22 },
-  { name: 'Logistique', amount: 5976, percentage: 12 },
-];
-
-const AI_FORECASTS = [
-  { article: 'Papier A4 (500 feuilles)', currentStock: 45, threshold: 50, forecast1m: 120, forecast3m: 360, trend: 'up', confidence: 92 },
-  { article: 'Stylos Bille Bleu', currentStock: 80, threshold: 30, forecast1m: 50, forecast3m: 150, trend: 'stable', confidence: 87 },
-  { article: 'Classeurs (Jaune)', currentStock: 12, threshold: 20, forecast1m: 35, forecast3m: 90, trend: 'up', confidence: 95 },
-  { article: 'Cartouche Imprimante HP', currentStock: 6, threshold: 10, forecast1m: 15, forecast3m: 42, trend: 'up', confidence: 89 },
-];
-
-const AUTO_SUGGESTIONS = [
-  { article: 'Papier A4 (500 feuilles)', suggestedQty: 200, reason: 'Consommation historique élevée + mois de rentrée', urgency: 'urgent' },
-  { article: 'Cartouche HP 302 Noir', suggestedQty: 20, reason: 'Stock critique (6 unités restantes)', urgency: 'high' },
-  { article: 'Classeurs (Jaune)', suggestedQty: 50, reason: 'Prévision IA : besoin dans 2 semaines', urgency: 'medium' },
-  { article: 'Post-it 76×76mm', suggestedQty: 30, reason: 'Demandes répétées sur 3 mois consécutifs', urgency: 'low' },
-];
-
-const CRITICAL_STOCK = [
-  { article: 'Classeurs (Jaune)', stock: 12, threshold: 20, supplier: 'Office Pro' },
-  { article: 'Cartouche HP 302 Noir', stock: 6, threshold: 10, supplier: 'Tech Store' },
-  { article: 'Scotch Transparent 19mm', stock: 4, threshold: 15, supplier: 'Supplies Plus' },
-];
-
-// ── Component ────────────────────────────────────────────────────────────────
+import { analyticsService, DashboardData } from '@services/analyticsService';
 
 export const AnalyticsPage: React.FC = () => {
   const [period, setPeriod] = useState('year');
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const maxAmount = Math.max(...MONTHLY_DATA.map((d) => d.amount));
-  const totalSpending = MONTHLY_DATA.reduce((s, d) => s + d.amount, 0);
-  const totalOrders = MONTHLY_DATA.reduce((s, d) => s + d.orders, 0);
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const res = await analyticsService.getDashboardData(period);
+        setData(res.data);
+      } catch (err) {
+        console.error('Erreur de chargement analytiques', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [period]);
 
   const getTrendIcon = (trend: string) => {
     if (trend === 'up') return <TrendingUp size={16} className="text-amber-500" />;
@@ -90,7 +49,23 @@ export const AnalyticsPage: React.FC = () => {
   const urgencyLabel = (u: string) =>
     u === 'urgent' ? 'Urgent' : u === 'high' ? 'Haute' : u === 'medium' ? 'Moyenne' : 'Basse';
 
+  if (isLoading || !data) {
+    return (
+      <MainLayout title="Bilan & Prévisions">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="animate-spin text-primary" size={32} />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const { monthlyData, categorySpending, departmentSpending, aiForecasts, autoSuggestions, criticalStock } = data;
+  const maxAmount = Math.max(...monthlyData.map((d) => d.amount));
+  const totalSpending = monthlyData.reduce((s, d) => s + d.amount, 0);
+  const totalOrders = monthlyData.reduce((s, d) => s + d.orders, 0);
+
   return (
+
     <MainLayout title="Bilan & Prévisions">
       <div className="space-y-6">
 
@@ -117,9 +92,9 @@ export const AnalyticsPage: React.FC = () => {
         </div>
 
         {/* ── Critical stock alert ── */}
-        {CRITICAL_STOCK.length > 0 && (
+        {criticalStock.length > 0 && (
           <Alert type="warning" closable={false}>
-            <span className="font-semibold">{CRITICAL_STOCK.length} article(s)</span> ont atteint le seuil critique de stock — une commande rapide est recommandée.
+            <span className="font-semibold">{criticalStock.length} article(s)</span> ont atteint le seuil critique de stock — une commande rapide est recommandée.
           </Alert>
         )}
 
@@ -129,7 +104,7 @@ export const AnalyticsPage: React.FC = () => {
             { label: 'Dépenses Totales', value: `${totalSpending.toLocaleString('fr-FR')} DA`, icon: <BarChart2 size={22} />, color: 'text-secondary' },
             { label: 'Commandes Passées', value: totalOrders, icon: <ShoppingCart size={22} />, color: 'text-primary' },
             { label: 'Valeur Moy. Commande', value: `${Math.round(totalSpending / totalOrders).toLocaleString('fr-FR')} DA`, icon: <TrendingUp size={22} />, color: 'text-green-600' },
-            { label: 'Articles en Stock Critique', value: CRITICAL_STOCK.length, icon: <AlertTriangle size={22} />, color: 'text-red-500' },
+            { label: 'Articles en Stock Critique', value: criticalStock.length, icon: <AlertTriangle size={22} />, color: 'text-red-500' },
           ].map((kpi, i) => (
             <Card key={i}>
               <CardBody>
@@ -150,7 +125,7 @@ export const AnalyticsPage: React.FC = () => {
           <CardHeader title="Évolution mensuelle des achats" />
           <CardBody>
             <div className="flex items-end gap-2 h-48 w-full overflow-x-auto pb-2">
-              {MONTHLY_DATA.map((d) => {
+              {monthlyData.map((d) => {
                 const pct = Math.round((d.amount / maxAmount) * 100);
                 return (
                   <div key={d.month} className="flex flex-col items-center gap-1 flex-1 min-w-[36px] group">
@@ -176,7 +151,7 @@ export const AnalyticsPage: React.FC = () => {
             <CardHeader title="Dépenses par Catégorie" />
             <CardBody>
               <div className="space-y-3">
-                {CATEGORY_SPENDING.map((c) => (
+                {categorySpending.map((c) => (
                   <div key={c.name}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="font-medium text-neutral-900">{c.name}</span>
@@ -195,7 +170,7 @@ export const AnalyticsPage: React.FC = () => {
             <CardHeader title="Dépenses par Service" />
             <CardBody>
               <div className="space-y-3">
-                {DEPARTMENT_SPENDING.map((d) => (
+                {departmentSpending.map((d) => (
                   <div key={d.name}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="font-medium text-neutral-900">{d.name}</span>
@@ -237,7 +212,7 @@ export const AnalyticsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-50">
-                  {AI_FORECASTS.map((f, i) => (
+                  {aiForecasts.map((f, i) => (
                     <tr key={i} className="hover:bg-neutral-50 transition-colors">
                       <td className="py-3 font-medium text-neutral-900">{f.article}</td>
                       <td className="py-3 text-center">
@@ -273,7 +248,7 @@ export const AnalyticsPage: React.FC = () => {
           />
           <CardBody>
             <div className="space-y-3">
-              {AUTO_SUGGESTIONS.map((s, i) => (
+              {autoSuggestions.map((s, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -301,11 +276,11 @@ export const AnalyticsPage: React.FC = () => {
         <Card>
           <CardHeader
             title="Alertes Stock Critique"
-            action={<Badge variant="danger">{CRITICAL_STOCK.length} articles</Badge>}
+            action={<Badge variant="danger">{criticalStock.length} articles</Badge>}
           />
           <CardBody>
             <div className="space-y-3">
-              {CRITICAL_STOCK.map((item, i) => (
+              {criticalStock.map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-4 border border-red-100 bg-red-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <AlertTriangle size={20} className="text-red-500 flex-shrink-0" />
