@@ -39,10 +39,61 @@ export const SystemLogsPage: React.FC = () => {
     fetchLogs();
   }, []);
 
+
+  const formatDetails = (details: string | null) => {
+    if (!details) return <span className="text-neutral-400 italic">Aucun détail</span>;
+    try {
+      const parsed = JSON.parse(details);
+      if (typeof parsed === 'object' && parsed !== null) {
+        return (
+          <div className="flex flex-col gap-1 text-xs">
+            {Object.entries(parsed).map(([k, v]) => {
+              if (k === 'password' || k === 'token' || k === 'refreshToken') return null;
+              const valStr = typeof v === 'object' ? JSON.stringify(v) : String(v);
+              return <div key={k}><span className="font-semibold text-neutral-700">{k}:</span> <span className="text-neutral-600">{valStr}</span></div>;
+            })}
+          </div>
+        );
+      }
+      return details;
+    } catch {
+      return details;
+    }
+  };
+
+  const formatAction = (action: string) => {
+    const map: Record<string, string> = {
+      'create': 'Création',
+      'update': 'Modification',
+      'delete': 'Suppression',
+      'login': 'Connexion',
+      'logout': 'Déconnexion',
+      'approve': 'Approbation',
+      'reject': 'Rejet',
+      'cancel': 'Annulation',
+      'submit': 'Soumission',
+      'confirm': 'Confirmation',
+      'ship': 'Expédition',
+      'receive': 'Réception',
+    };
+    return map[action] || action;
+  };
+  
+  const formatEntity = (entity: string) => {
+    const map: Record<string, string> = {
+      'User': 'Utilisateur',
+      'SupplyRequest': 'Demande',
+      'Order': 'Commande',
+      'StockAdjustment': 'Stock',
+      'Settings': 'Paramètres',
+    };
+    return map[entity] || entity;
+  };
+
   const getSeverity = (action: string) => {
     const a = action.toLowerCase();
-    if (a.includes('delete') || a.includes('cancel') || a.includes('reject') || a.includes('hard')) return 'error';
-    if (a.includes('update') || a.includes('deactivate')) return 'warning';
+    if (a.includes('delete') || a.includes('hard')) return 'error';
+    if (a.includes('cancel') || a.includes('reject') || a.includes('deactivate') || a.includes('update')) return 'warning';
     return 'info';
   };
 
@@ -74,7 +125,7 @@ export const SystemLogsPage: React.FC = () => {
       width: '180px',
     },
     {
-      key: 'action' as const, // Uses action to determine severity
+      key: 'action' as const,
       label: 'Niveau',
       sortable: true,
       width: '120px',
@@ -95,6 +146,7 @@ export const SystemLogsPage: React.FC = () => {
     },
     {
       key: 'entity' as const,
+      render: (val: string) => formatEntity(val),
       label: 'Module',
       sortable: true,
       width: '150px',
@@ -107,6 +159,7 @@ export const SystemLogsPage: React.FC = () => {
     },
     {
       key: 'action' as const,
+      render: (val: string) => formatAction(val),
       label: 'Action',
       sortable: true,
       width: '200px',
@@ -115,6 +168,7 @@ export const SystemLogsPage: React.FC = () => {
       key: 'details' as const,
       label: 'Détails',
       sortable: false,
+      render: (val: string) => formatDetails(val),
     },
   ];
 
