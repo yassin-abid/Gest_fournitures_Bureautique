@@ -112,7 +112,7 @@ export const RequestDetailsPage: React.FC = () => {
 
   if (!request) return null;
 
-  const canApproveReject = request.status === 'en_attente' && user?.role === 'responsable_service';
+  const canApproveReject = request.status === 'en_attente' && (user?.role === 'responsable_service' || user?.role === 'admin');
 
   const getStatusVariant = (status: string) => {
     switch (status) {
