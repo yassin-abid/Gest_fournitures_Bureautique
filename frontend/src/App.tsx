@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@stores/authStore';
 import { useUIStore } from '@stores/uiStore';
+import { ToastContainer } from '@components/Toast';
 
 // Pages
 import { LoginPage } from '@pages/LoginPage';
@@ -265,6 +266,7 @@ export const App: React.FC = () => {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <ToastContainer />
     </Router>
   );
 };
