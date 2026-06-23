@@ -62,7 +62,7 @@ export const LoginPage: React.FC = () => {
       await authService.forgotPassword(forgotEmail);
       setIsForgotModalOpen(false);
       setForgotEmail('');
-      alert("Demande envoyée à l'administrateur. Vous serez notifié une fois approuvée.");
+      showSuccess("Demande envoyée à l'administrateur. Vous serez notifié une fois approuvée.");
     } catch (err: any) {
       showError(err.message || 'Erreur lors de la demande');
     } finally {
