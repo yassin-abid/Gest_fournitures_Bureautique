@@ -11,6 +11,79 @@ import { MainLayout } from '../layouts/MainLayout';
 import { Loader } from '../components/Loader';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '@services/authService';
+
+/* ─────────────────────────────────────────────────────────────
+   Shared Components
+───────────────────────────────────────────────────────────── */
+const NotificationsPanel: React.FC = () => {
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchNotifs();
+  }, []);
+
+  const fetchNotifs = async () => {
+    try {
+      const data = await authService.getNotifications();
+      setNotifications(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const markAsRead = async (id: number) => {
+    try {
+      await authService.markNotificationAsRead(id);
+      fetchNotifs();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  return (
+    <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col h-full">
+      <div className="p-5 border-b border-outline-variant flex items-center gap-2 bg-surface/50">
+        <span className="material-symbols-outlined text-on-surface-variant text-[20px]">notifications</span>
+        <h3 className="text-lg font-semibold text-on-surface flex-1">Notifications</h3>
+        {unreadCount > 0 && (
+          <span className="text-xs font-bold text-on-secondary bg-secondary px-2 py-0.5 rounded-full">{unreadCount}</span>
+        )}
+      </div>
+      <div className="divide-y divide-outline-variant/30 flex-1 overflow-y-auto max-h-[400px]">
+        {notifications.length === 0 ? (
+          <div className="p-5 text-center text-on-surface-variant text-sm">
+            Aucune notification récente.
+          </div>
+        ) : (
+          notifications.map((notif) => (
+            <div 
+              key={notif.id} 
+              className={`flex gap-3 px-5 py-4 cursor-pointer transition-colors ${!notif.isRead ? 'bg-secondary/5 hover:bg-secondary/10' : 'hover:bg-surface-container-lowest'}`}
+              onClick={() => !notif.isRead && markAsRead(notif.id)}
+            >
+              <span className={`material-symbols-outlined text-[20px] shrink-0 mt-0.5 ${notif.title?.toLowerCase().includes('erreur') ? 'text-red-500' : 'text-secondary'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                {notif.title?.toLowerCase().includes('approuvé') ? 'check_circle' : notif.title?.toLowerCase().includes('erreur') ? 'cancel' : 'notifications_active'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${!notif.isRead ? 'text-on-surface' : 'text-on-surface-variant'}`}>
+                  {notif.title || 'Notification'}
+                </p>
+                <p className={`text-sm mt-0.5 ${!notif.isRead ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}>
+                  {notif.message}
+                </p>
+                <p className="text-[10px] text-on-surface-variant mt-1">{new Date(notif.date).toLocaleString()}</p>
+              </div>
+              {!notif.isRead && <span className="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1.5" title="Marquer comme lu" />}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 /* ─────────────────────────────────────────────────────────────
    Advanced Stock Dashboard — visible to Gestionnaire de Stock
@@ -511,28 +584,7 @@ const ResponsableServiceDashboard: React.FC = () => {
           </div>
 
           {/* Notifications */}
-          <div className="bg-surface border border-outline-variant rounded-xl soft-shadow p-5">
-            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-              Notifications du Service
-            </h3>
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <span className="w-2 h-2 rounded-full bg-secondary mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-on-surface">Nouvelle demande soumise par <span className="font-medium">Amira Belaid</span>.</p>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">Il y a 2 heures</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-on-surface">Commande <span className="font-medium">ORD-109</span> (Ressources Humaines) a été livrée.</p>
-                  <p className="text-[10px] text-on-surface-variant mt-0.5">Hier</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <NotificationsPanel />
         </div>
       </div>
     </MainLayout>
@@ -553,17 +605,13 @@ const EmployeDashboard: React.FC = () => {
     { id: 'req-004', number: 'REQ-004', label: 'Agrafeuse de bureau (x2)', date: '2024-05-28', status: 'delivered', statusLabel: 'Livrée ✓', statusColor: 'text-purple-700 bg-purple-50' },
   ];
 
-  const notifications = [
-    { icon: 'check_circle', color: 'text-emerald-500', message: 'Votre demande REQ-002 a été approuvée par votre responsable.', time: 'Il y a 2h', read: false },
-    { icon: 'cancel', color: 'text-red-500', message: 'Votre demande REQ-003 a été refusée. Motif : Budget insuffisant.', time: 'Hier', read: false },
-    { icon: 'local_shipping', color: 'text-purple-500', message: 'Votre commande REQ-004 a été livrée et disponible.', time: 'Il y a 3 jours', read: true },
-  ];
-
   const submittedCount = myRequests.filter(r => r.status === 'submitted').length;
   const approvedCount = myRequests.filter(r => r.status === 'approved').length;
   const rejectedCount = myRequests.filter(r => r.status === 'rejected').length;
   const deliveredCount = myRequests.filter(r => r.status === 'delivered').length;
-  const unreadNotifs = notifications.filter(n => !n.read).length;
+
+  // unreadNotifs is handled inside NotificationsPanel, so we no longer display the banner here
+  // to avoid duplication and state management here.
 
   return (
     <MainLayout>
@@ -585,15 +633,7 @@ const EmployeDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Notifications Banner */}
-      {unreadNotifs > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-secondary/10 border border-secondary/20 rounded-xl mb-gutter">
-          <span className="material-symbols-outlined text-secondary shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
-          <p className="flex-1 text-sm text-on-surface font-medium">
-            Vous avez <strong>{unreadNotifs} nouvelle(s) notification(s)</strong> sur vos demandes.
-          </p>
-        </div>
-      )}
+      {/* Notifications Banner handling removed as it is now in NotificationsPanel */}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-gutter">
@@ -673,31 +713,7 @@ const EmployeDashboard: React.FC = () => {
         </div>
 
         {/* Notifications Panel */}
-        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden">
-          <div className="p-5 border-b border-outline-variant flex items-center gap-2 bg-surface/50">
-            <span className="material-symbols-outlined text-on-surface-variant text-[20px]">notifications</span>
-            <h3 className="text-lg font-semibold text-on-surface flex-1">Notifications</h3>
-            {unreadNotifs > 0 && (
-              <span className="text-xs font-bold text-on-secondary bg-secondary px-2 py-0.5 rounded-full">{unreadNotifs}</span>
-            )}
-          </div>
-          <div className="divide-y divide-outline-variant/30">
-            {notifications.map((notif, i) => (
-              <div key={i} className={`flex gap-3 px-5 py-4 ${!notif.read ? 'bg-secondary/5' : ''}`}>
-                <span className={`material-symbols-outlined text-[20px] shrink-0 mt-0.5 ${notif.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {notif.icon}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${!notif.read ? 'font-medium text-on-surface' : 'text-on-surface-variant'}`}>
-                    {notif.message}
-                  </p>
-                  <p className="text-[10px] text-on-surface-variant mt-1">{notif.time}</p>
-                </div>
-                {!notif.read && <span className="w-2 h-2 rounded-full bg-secondary shrink-0 mt-1.5" />}
-              </div>
-            ))}
-          </div>
-        </div>
+        <NotificationsPanel />
       </div>
 
       {/* Quick Actions */}
@@ -1042,49 +1058,41 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Accès Rapides */}
-        <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-outline-variant flex items-center bg-surface/50">
-            <h3 className="text-lg font-semibold text-on-surface flex-1">Accès Rapides</h3>
+        <div className="flex flex-col gap-gutter">
+          {/* Accès Rapides */}
+          <div className="bg-surface border border-outline-variant rounded-xl soft-shadow overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-outline-variant flex items-center bg-surface/50">
+              <h3 className="text-lg font-semibold text-on-surface flex-1">Accès Rapides</h3>
+            </div>
+            <div className="p-2 flex-1 flex flex-col gap-2">
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
+                  <span className="material-symbols-outlined text-blue-600" style={{ fontVariationSettings: "'FILL' 1" }}>group_add</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Gestion des utilisateurs</h4>
+                  <p className="text-xs text-on-surface-variant">Créer ou modifier des comptes</p>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate('/admin/roles')}
+                className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors shrink-0">
+                  <span className="material-symbols-outlined text-purple-600" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Rôles & Permissions</h4>
+                  <p className="text-xs text-on-surface-variant">Ajuster les droits d'accès</p>
+                </div>
+              </button>
+            </div>
           </div>
-          <div className="p-2 flex-1 flex flex-col gap-2">
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors shrink-0">
-                <span className="material-symbols-outlined text-blue-600" style={{ fontVariationSettings: "'FILL' 1" }}>group_add</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Gestion des utilisateurs</h4>
-                <p className="text-xs text-on-surface-variant">Créer ou modifier des comptes</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/admin/roles')}
-              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors shrink-0">
-                <span className="material-symbols-outlined text-purple-600" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Rôles & Permissions</h4>
-                <p className="text-xs text-on-surface-variant">Ajuster les droits d'accès</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/admin/settings')}
-              className="flex items-center gap-4 p-4 rounded-lg hover:bg-surface-container-lowest transition-all group text-left"
-            >
-              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors shrink-0">
-                <span className="material-symbols-outlined text-slate-600" style={{ fontVariationSettings: "'FILL' 1" }}>settings</span>
-              </div>
-              <div>
-                <h4 className="font-medium text-sm text-on-surface group-hover:text-secondary transition-colors">Paramètres globaux</h4>
-                <p className="text-xs text-on-surface-variant">Configuration système</p>
-              </div>
-            </button>
-          </div>
+          
+          <NotificationsPanel />
         </div>
       </div>
     </MainLayout>

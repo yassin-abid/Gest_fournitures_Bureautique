@@ -92,6 +92,18 @@ export const authService = {
       include: { role: true, service: true },
     });
 
+    // Notify admins
+    const admins = await prisma.user.findMany({ where: { role: { name: 'admin' } } });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(a => ({
+          userId: a.id,
+          title: 'Nouvelle demande de création de compte',
+          message: `L'utilisateur ${user.firstName} ${user.lastName} (${user.email}) vient de s'inscrire et attend votre validation.`
+        }))
+      });
+    }
+
     // Ne pas retourner de token pour forcer la connexion manuelle après validation
     return { user: formatUser(user), message: 'Compte créé avec succès, en attente de validation' };
   },
@@ -196,4 +208,25 @@ export const authService = {
 
     return { user: formatUser(user), token: accessToken, refreshToken };
   },
+
+  async getUserNotifications(userId: number) {
+    const notifications = await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { date: 'desc' },
+      take: 20
+    });
+    return notifications;
+  },
+
+  async markNotificationAsRead(userId: number, notificationId: number) {
+    const notif = await prisma.notification.findUnique({ where: { id: notificationId } });
+    if (!notif || notif.userId !== userId) {
+      throw new AppError('Notification introuvable ou non autorisée', 404);
+    }
+    const updated = await prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true }
+    });
+    return updated;
+  }
 };

@@ -69,9 +69,13 @@ export const authService = {
     return response.data;
   },
 
-  resetPassword: async (data: { email: string; newPassword: string }): Promise<{ message: string }> => {
-    const response = await apiClient.post<{ message: string }>('/auth/reset-password', data);
+  getNotifications: async (): Promise<any[]> => {
+    const response = await apiClient.get<any[]>('/auth/me/notifications');
     return response.data;
+  },
+
+  markNotificationAsRead: async (id: number): Promise<void> => {
+    await apiClient.put(`/auth/me/notifications/${id}/read`);
   },
 
   /**

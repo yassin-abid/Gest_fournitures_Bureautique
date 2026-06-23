@@ -101,4 +101,24 @@ router.post('/refresh', validate(refreshTokenSchema), async (req: Request, res: 
   }
 });
 
+// GET /api/auth/me/notifications
+router.get('/me/notifications', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const notifications = await authService.getUserNotifications((req as any).user.userId);
+    res.json(notifications);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/auth/me/notifications/:id/read
+router.put('/me/notifications/:id/read', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const notification = await authService.markNotificationAsRead((req as any).user.userId, Number(req.params.id));
+    res.json(notification);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
