@@ -73,6 +73,20 @@ router.post('/users/:id/deactivate', audit('update', 'User'), async (req: Reques
   } catch (err) { next(err); }
 });
 
+router.post('/users/:id/approve-reset', audit('update', 'User'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.approvePasswordReset(Number(req.params.id));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+router.post('/users/:id/reject-reset', audit('update', 'User'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.rejectPasswordReset(Number(req.params.id));
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 // ─── Logs ─────────────────────────────────────────────────
 
 router.get('/logs', async (req: Request, res: Response, next: NextFunction) => {

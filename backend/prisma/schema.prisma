@@ -257,8 +257,10 @@ model User {
   passwordHash     String          @map("mot_de_passe") @db.VarChar(255)
   roleId           Int             @map("role_id")
   serviceId        Int?            @map("service_id")
-  isActive         Boolean?        @default(true) @map("actif")
-  createdAt        DateTime?       @default(now()) @map("date_creation") @db.Timestamp(6)
+  isActive               Boolean?        @default(true) @map("actif")
+  passwordResetRequested Boolean?        @default(false) @map("demande_reinit_mdp")
+  passwordResetApproved  Boolean?        @default(false) @map("reinit_mdp_approuvee")
+  createdAt              DateTime?       @default(now()) @map("date_creation") @db.Timestamp(6)
   lastLogin        DateTime?       @map("derniere_connexion") @db.Timestamp(6)
   orders           Order[]
   requests         SupplyRequest[] @relation("RequesterRelation")

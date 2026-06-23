@@ -58,6 +58,16 @@ export const adminService = {
     return response.data;
   },
 
+  approvePasswordReset: async (id: string): Promise<User> => {
+    const response = await apiClient.post<User>(`/admin/users/${id}/approve-reset`, {});
+    return response.data;
+  },
+
+  rejectPasswordReset: async (id: string): Promise<User> => {
+    const response = await apiClient.post<User>(`/admin/users/${id}/reject-reset`, {});
+    return response.data;
+  },
+
   // Roles Management
   getRoles: async (): Promise<Role[]> => {
     const response = await apiClient.get<Role[]>('/admin/roles');

@@ -7,6 +7,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthLayout } from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { useNotification } from '../hooks/useAuth';
+import { Modal } from '@components/Modal';
+import { Input } from '@components/FormInputs';
+import { authService } from '@services/authService';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +18,10 @@ export const LoginPage: React.FC = () => {
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,6 +49,24 @@ export const LoginPage: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       showError(err.message || 'La connexion a échoué');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      showError('Veuillez entrer votre email');
+      return;
+    }
+    setIsForgotLoading(true);
+    try {
+      await authService.forgotPassword(forgotEmail);
+      setIsForgotModalOpen(false);
+      setForgotEmail('');
+      alert("Demande envoyée à l'administrateur. Vous serez notifié une fois approuvée.");
+    } catch (err: any) {
+      showError(err.message || 'Erreur lors de la demande');
+    } finally {
+      setIsForgotLoading(false);
     }
   };
 
@@ -153,12 +178,13 @@ export const LoginPage: React.FC = () => {
               </label>
             </div>
             <div className="text-sm">
-              <a
+              <button
+                type="button"
+                onClick={() => setIsForgotModalOpen(true)}
                 className="font-body-sm text-body-sm text-secondary hover:text-secondary-container transition-colors duration-300 font-semibold"
-                href="#"
               >
                 Mot de passe oublié ?
-              </a>
+              </button>
             </div>
           </div>
 
@@ -210,6 +236,28 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        title="Mot de passe oublié"
+        onConfirm={handleForgotPassword}
+        confirmText={isForgotLoading ? 'Envoi...' : 'Demander la réinitialisation'}
+      >
+        <div className="space-y-4">
+          <p className="text-neutral-600 text-sm">
+            Entrez votre adresse email professionnelle. Une notification sera envoyée à l'administrateur pour approuver votre demande de réinitialisation.
+          </p>
+          <Input
+            label="Email Professionnel"
+            type="email"
+            placeholder="prenom.nom@groupe-hammemi.com"
+            value={forgotEmail}
+            onChange={(e) => setForgotEmail(e.target.value)}
+            disabled={isForgotLoading}
+          />
+        </div>
+      </Modal>
     </AuthLayout>
   );
 };

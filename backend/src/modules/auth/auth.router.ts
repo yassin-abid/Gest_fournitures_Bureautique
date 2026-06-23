@@ -9,9 +9,31 @@ import {
   changePasswordSchema,
   updateProfileSchema,
   refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from './auth.schema';
 
 const router = Router();
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', validate(forgotPasswordSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.requestPasswordReset(req.body.email);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', validate(resetPasswordSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.executePasswordReset(req.body.email, req.body.newPassword);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // POST /api/auth/login
 router.post('/login', validate(loginSchema), async (req: Request, res: Response, next: NextFunction) => {

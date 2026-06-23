@@ -19,6 +19,8 @@ export interface User {
   avatar?: string;
   permissions?: string[];
   status: 'active' | 'inactive';
+  passwordResetRequested?: boolean;
+  passwordResetApproved?: boolean;
   createdAt: string;
   updatedAt: string;
 }

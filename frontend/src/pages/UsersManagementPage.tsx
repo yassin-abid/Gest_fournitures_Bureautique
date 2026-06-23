@@ -58,6 +58,9 @@ export const UsersManagementPage: React.FC = () => {
         <div>
           <p className="font-medium text-neutral-900">{row.firstName} {row.lastName}</p>
           <p className="text-sm text-neutral-600">{row.email}</p>
+          {row.passwordResetRequested && (
+            <Badge variant="warning" className="mt-1 text-xs">Demande Réinit. MDP</Badge>
+          )}
         </div>
       ),
     },
@@ -141,6 +144,39 @@ export const UsersManagementPage: React.FC = () => {
                     } catch (e: any) {
                       alert("Erreur lors de la suppression: " + e.message);
                     }
+                  }
+                }}
+                title="Refuser la demande"
+              />
+            </div>
+          ) : row.passwordResetRequested ? (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<CheckCircle size={16} />}
+                onClick={async () => {
+                  try {
+                    await adminService.approvePasswordReset(row.id.toString());
+                    fetchUsers();
+                  } catch (e: any) {
+                    alert("Erreur lors de l'approbation: " + e.message);
+                  }
+                }}
+                title="Approuver la réinitialisation"
+              >
+                Approuver MDP
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={<XCircle size={16} />}
+                onClick={async () => {
+                  try {
+                    await adminService.rejectPasswordReset(row.id.toString());
+                    fetchUsers();
+                  } catch (e: any) {
+                    alert("Erreur lors du refus: " + e.message);
                   }
                 }}
                 title="Refuser la demande"
@@ -443,10 +479,15 @@ export const UsersManagementPage: React.FC = () => {
             setSelectedUser(null);
           }}
           title="Réinitialiser le Mot de passe"
-          onConfirm={() => {
-            setIsResetPasswordModalOpen(false);
-            setSelectedUser(null);
-            alert('Email de réinitialisation de mot de passe envoyé à ' + selectedUser.email);
+          onConfirm={async () => {
+            try {
+              await adminService.resetUserPassword(selectedUser.id.toString());
+              setIsResetPasswordModalOpen(false);
+              setSelectedUser(null);
+              alert('Un email de réinitialisation de mot de passe a été envoyé à ' + selectedUser.email);
+            } catch (e: any) {
+              alert('Erreur: ' + e.message);
+            }
           }}
           confirmText="Envoyer l'Email de Réinitialisation"
         >

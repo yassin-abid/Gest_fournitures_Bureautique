@@ -11,6 +11,8 @@ const formatUser = (u: any) => ({
   role: u.role?.name || 'employe',
   department: u.service?.name,
   status: u.isActive ? 'active' : 'inactive',
+  passwordResetRequested: u.passwordResetRequested,
+  passwordResetApproved: u.passwordResetApproved,
   createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
   updatedAt: u.lastLogin ? new Date(u.lastLogin).toISOString() : new Date().toISOString(),
 });
@@ -149,6 +151,49 @@ export const adminService = {
       data: { isActive: false },
       include: { role: true, service: true }
     });
+    return formatUser(user);
+  },
+
+  async approvePasswordReset(id: number) {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { 
+        passwordResetApproved: true,
+        passwordResetRequested: false
+      },
+      include: { role: true, service: true }
+    });
+    
+    // Notify user
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: 'Réinitialisation de mot de passe approuvée',
+        message: 'Votre demande de réinitialisation de mot de passe a été approuvée. Vous pouvez maintenant définir un nouveau mot de passe.'
+      }
+    });
+
+    return formatUser(user);
+  },
+
+  async rejectPasswordReset(id: number) {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { 
+        passwordResetRequested: false 
+      },
+      include: { role: true, service: true }
+    });
+
+    // Notify user
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        title: 'Réinitialisation de mot de passe refusée',
+        message: "Votre demande de réinitialisation de mot de passe a été refusée par l'administrateur."
+      }
+    });
+
     return formatUser(user);
   },
 

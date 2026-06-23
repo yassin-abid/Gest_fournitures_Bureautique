@@ -127,6 +127,51 @@ export const authService = {
     return formatUser(user);
   },
 
+  async requestPasswordReset(email: string) {
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) throw new AppError('Utilisateur introuvable', 404);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetRequested: true }
+    });
+
+    // Notify admins
+    const admins = await prisma.user.findMany({ where: { role: { name: 'admin' } } });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(a => ({
+          userId: a.id,
+          title: 'Demande de réinitialisation de mot de passe',
+          message: `L'utilisateur ${user.firstName} ${user.lastName} (${user.email}) a demandé la réinitialisation de son mot de passe.`
+        }))
+      });
+    }
+
+    return { message: "Demande envoyée à l'administrateur" };
+  },
+
+  async executePasswordReset(email: string, newPassword: string) {
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) throw new AppError('Utilisateur introuvable', 404);
+
+    if (!user.passwordResetApproved) {
+      throw new AppError("La demande de réinitialisation n'a pas encore été approuvée par l'administrateur", 403);
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        passwordHash,
+        passwordResetApproved: false,
+        passwordResetRequested: false
+      }
+    });
+
+    return { message: 'Mot de passe réinitialisé avec succès' };
+  },
+
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError('Utilisateur introuvable', 404);
