@@ -159,7 +159,7 @@ export const adminService = {
     const user = await prisma.user.update({
       where: { id },
       data: { 
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         passwordResetApproved: false,
         passwordResetRequested: false
       },
