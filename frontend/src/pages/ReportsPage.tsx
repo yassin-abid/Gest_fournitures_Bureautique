@@ -123,7 +123,7 @@ export const ReportsPage: React.FC = () => {
         config = {
           title: 'Rapport des Dépenses par Service',
           filename: `spending_report_${new Date().getTime()}`,
-          columns: ['Service', 'Montant Total (DA)', 'Pourcentage'],
+          columns: ['Service', 'Montant Total (DT)', 'Pourcentage'],
           data: res.data.departmentSpending.map(d => [
             d.name,
             d.amount.toString(),

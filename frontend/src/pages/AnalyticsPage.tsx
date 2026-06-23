@@ -49,7 +49,7 @@ export const AnalyticsPage: React.FC = () => {
     const config: ReportConfig = {
       title: `Bilan et Dépenses Mensuelles`,
       filename: `bilan_depenses_${new Date().getTime()}`,
-      columns: ['Mois', 'Dépenses (DA)', 'Nombre de Commandes'],
+      columns: ['Mois', 'Dépenses (DT)', 'Nombre de Commandes'],
       data: data.monthlyData.map(d => [d.month, d.amount.toString(), d.orders.toString()])
     };
     try {
@@ -118,9 +118,9 @@ export const AnalyticsPage: React.FC = () => {
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Dépenses Totales', value: `${totalSpending.toLocaleString('fr-FR')} DA`, icon: <BarChart2 size={22} />, color: 'text-secondary' },
+            { label: 'Dépenses Totales', value: `${totalSpending.toLocaleString('fr-FR')} DT`, icon: <BarChart2 size={22} />, color: 'text-secondary' },
             { label: 'Commandes Passées', value: totalOrders, icon: <ShoppingCart size={22} />, color: 'text-primary' },
-            { label: 'Valeur Moy. Commande', value: `${Math.round(totalSpending / totalOrders).toLocaleString('fr-FR')} DA`, icon: <TrendingUp size={22} />, color: 'text-green-600' },
+            { label: 'Valeur Moy. Commande', value: `${Math.round(totalSpending / totalOrders).toLocaleString('fr-FR')} DT`, icon: <TrendingUp size={22} />, color: 'text-green-600' },
             { label: 'Articles en Stock Critique', value: criticalStock.length, icon: <AlertTriangle size={22} />, color: 'text-red-500' },
           ].map((kpi, i) => (
             <Card key={i}>
@@ -152,7 +152,7 @@ export const AnalyticsPage: React.FC = () => {
                     <div
                       className="w-full bg-secondary rounded-t-sm transition-all duration-500 hover:bg-primary cursor-pointer"
                       style={{ height: `${pct}%`, minHeight: '4px' }}
-                      title={`${d.month}: ${d.amount.toLocaleString('fr-FR')} DA — ${d.orders} commandes`}
+                      title={`${d.month}: ${d.amount.toLocaleString('fr-FR')} DT — ${d.orders} commandes`}
                     />
                     <span className="text-[10px] text-neutral-500">{d.month}</span>
                   </div>
@@ -172,7 +172,7 @@ export const AnalyticsPage: React.FC = () => {
                   <div key={c.name}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="font-medium text-neutral-900">{c.name}</span>
-                      <span className="text-neutral-600">{c.amount.toLocaleString('fr-FR')} DA — {c.percentage}%</span>
+                      <span className="text-neutral-600">{c.amount.toLocaleString('fr-FR')} DT — {c.percentage}%</span>
                     </div>
                     <div className="w-full bg-neutral-100 rounded-full h-2">
                       <div className={`${c.color} h-2 rounded-full transition-all duration-500`} style={{ width: `${c.percentage}%` }} />
@@ -191,7 +191,7 @@ export const AnalyticsPage: React.FC = () => {
                   <div key={d.name}>
                     <div className="flex justify-between text-sm mb-1">
                       <span className="font-medium text-neutral-900">{d.name}</span>
-                      <span className="text-neutral-600">{d.amount.toLocaleString('fr-FR')} DA — {d.percentage}%</span>
+                      <span className="text-neutral-600">{d.amount.toLocaleString('fr-FR')} DT — {d.percentage}%</span>
                     </div>
                     <div className="w-full bg-neutral-100 rounded-full h-2">
                       <div className="bg-primary h-2 rounded-full transition-all duration-500" style={{ width: `${d.percentage}%` }} />
