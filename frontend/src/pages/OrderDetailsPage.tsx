@@ -60,13 +60,13 @@ export const OrderDetailsPage: React.FC = () => {
       key: 'unitPrice' as const,
       label: 'Prix unitaire',
       sortable: false,
-      render: (value: number) => <span>{value.toFixed(2)} DH</span>,
+      render: (value: number) => <span>{value.toFixed(2)} DT</span>,
     },
     {
       key: 'quantity' as const,
       label: 'Prix Total',
       sortable: false,
-      render: (_value: number, row: OrderItem) => <span className="font-semibold">{(row.quantity * row.unitPrice).toFixed(2)} DH</span>,
+      render: (_value: number, row: OrderItem) => <span className="font-semibold">{(row.quantity * row.unitPrice).toFixed(2)} DT</span>,
     },
     {
       key: 'receivedQuantity' as const,
@@ -301,7 +301,7 @@ export const OrderDetailsPage: React.FC = () => {
                 <div>
                   <p className="text-sm text-neutral-600 text-right">Montant Total :</p>
                   <p className="text-3xl font-bold text-primary-600 mt-1">
-                    {totalAmount.toFixed(2)} DH
+                    {totalAmount.toFixed(2)} DT
                   </p>
                 </div>
               </div>

@@ -299,8 +299,8 @@ export const CreateOrderPage: React.FC = () => {
                       <p className="font-medium text-neutral-900">{item.articleName}</p>
                       <div className="flex items-center gap-4 mt-1 text-sm text-neutral-600">
                         <span>Qté : {item.quantity}</span>
-                        <span>Prix unitaire : {item.unitPrice.toFixed(2)} DH</span>
-                        <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} DH</span>
+                        <span>Prix unitaire : {item.unitPrice.toFixed(2)} DT</span>
+                        <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} DT</span>
                         {item.notes && <span className="italic">{item.notes}</span>}
                       </div>
                     </div>
@@ -312,7 +312,7 @@ export const CreateOrderPage: React.FC = () => {
               <div className="border-t border-neutral-200 mt-4 pt-4">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-neutral-900">Montant Total :</span>
-                  <span className="text-2xl font-bold text-primary-600">{totalAmount.toFixed(2)} DH</span>
+                  <span className="text-2xl font-bold text-primary-600">{totalAmount.toFixed(2)} DT</span>
                 </div>
               </div>
             </CardBody>
