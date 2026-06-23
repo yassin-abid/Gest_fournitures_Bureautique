@@ -14,7 +14,7 @@ import { authService } from '@services/authService';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuth();
-  const { showError } = useNotification();
+  const { showError, showSuccess } = useNotification();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
