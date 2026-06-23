@@ -50,21 +50,11 @@ export const adminService = {
     return response.data;
   },
 
-  resetUserPassword: async (id: string): Promise<{ temporaryPassword: string }> => {
-    const response = await apiClient.post<{ temporaryPassword: string }>(
+  resetUserPassword: async (id: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await apiClient.post<{ message: string }>(
       `/admin/users/${id}/reset-password`,
-      {}
+      { newPassword }
     );
-    return response.data;
-  },
-
-  approvePasswordReset: async (id: string): Promise<User> => {
-    const response = await apiClient.post<User>(`/admin/users/${id}/approve-reset`, {});
-    return response.data;
-  },
-
-  rejectPasswordReset: async (id: string): Promise<User> => {
-    const response = await apiClient.post<User>(`/admin/users/${id}/reject-reset`, {});
     return response.data;
   },
 

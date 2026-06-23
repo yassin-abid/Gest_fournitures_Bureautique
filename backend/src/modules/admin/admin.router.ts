@@ -73,9 +73,14 @@ router.post('/users/:id/deactivate', audit('update', 'User'), async (req: Reques
   } catch (err) { next(err); }
 });
 
-router.post('/users/:id/approve-reset', audit('update', 'User'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/users/:id/reset-password', audit('update', 'User'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await adminService.approvePasswordReset(Number(req.params.id));
+    const { newPassword } = req.body;
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+      res.status(400).json({ message: 'Le mot de passe doit contenir au moins 6 caractères.' });
+      return;
+    }
+    const result = await adminService.resetUserPassword(Number(req.params.id), newPassword);
     res.json(result);
   } catch (err) { next(err); }
 });

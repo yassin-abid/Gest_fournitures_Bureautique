@@ -246,7 +246,7 @@ export const LoginPage: React.FC = () => {
       >
         <div className="space-y-4">
           <p className="text-neutral-600 text-sm">
-            Entrez votre adresse email professionnelle. Une notification sera envoyée à l'administrateur pour approuver votre demande de réinitialisation.
+            Entrez votre adresse email professionnelle. Une notification sera envoyée à l'administrateur. Veuillez ensuite le contacter directement pour obtenir votre nouveau mot de passe.
           </p>
           <Input
             label="Email Professionnel"

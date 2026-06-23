@@ -154,11 +154,13 @@ export const adminService = {
     return formatUser(user);
   },
 
-  async approvePasswordReset(id: number) {
+  async resetUserPassword(id: number, newPassword: string) {
+    const hashedPassword = await hashPassword(newPassword);
     const user = await prisma.user.update({
       where: { id },
       data: { 
-        passwordResetApproved: true,
+        password: hashedPassword,
+        passwordResetApproved: false,
         passwordResetRequested: false
       },
       include: { role: true, service: true }
@@ -168,8 +170,8 @@ export const adminService = {
     await prisma.notification.create({
       data: {
         userId: user.id,
-        title: 'Réinitialisation de mot de passe approuvée',
-        message: 'Votre demande de réinitialisation de mot de passe a été approuvée. Vous pouvez maintenant définir un nouveau mot de passe.'
+        title: 'Mot de passe réinitialisé',
+        message: 'Votre mot de passe a été réinitialisé. Veuillez contacter votre administrateur pour obtenir vos nouveaux identifiants.'
       }
     });
 

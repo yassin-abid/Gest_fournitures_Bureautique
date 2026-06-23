@@ -1,8 +1,28 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-async function run() {
-  await prisma.$executeRawUnsafe('ALTER TABLE commandes DROP CONSTRAINT commandes_statut_check');
-  await prisma.$executeRawUnsafe("ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN ('en_attente', 'confirmée', 'expédiée', 'partielle', 'livrée', 'annulée'))");
-  console.log('Constraint updated successfully');
+const fs = require('fs');
+const path = require('path');
+
+function replaceAliases(dir) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    if (fs.statSync(filePath).isDirectory()) {
+      replaceAliases(filePath);
+    } else if (filePath.endsWith('.ts')) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      
+      // Calculate depth relative to backend/src
+      const relativeToSrc = path.relative('backend/src', dir);
+      const depth = relativeToSrc ? relativeToSrc.split(path.sep).length : 0;
+      const rel = depth === 0 ? './' : '../'.repeat(depth);
+      
+      // ONLY replace our custom aliases, ignore @prisma, @types, etc
+      content = content.replace(/from '@(config|middleware|modules|utils)\/(.*)'/g, (match, p1, p2) => {
+        return `from '${rel}${p1}/${p2}'`;
+      });
+      fs.writeFileSync(filePath, content);
+    }
+  }
 }
-run().catch(console.error).finally(() => prisma.$disconnect());
+
+replaceAliases('backend/src');
+console.log("Done");

@@ -32,8 +32,3 @@ export const refreshTokenSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Email invalide'),
 });
-
-export const resetPasswordSchema = z.object({
-  email: z.string().email('Email invalide'),
-  newPassword: z.string().min(8, 'Le nouveau mot de passe doit faire au moins 8 caractères'),
-});

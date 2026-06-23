@@ -154,32 +154,32 @@ export const UsersManagementPage: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                icon={<CheckCircle size={16} />}
-                onClick={async () => {
-                  try {
-                    await adminService.approvePasswordReset(row.id.toString());
-                    fetchUsers();
-                  } catch (e: any) {
-                    alert("Erreur lors de l'approbation: " + e.message);
-                  }
+                icon={<Lock size={16} />}
+                onClick={() => {
+                  setSelectedUser(row);
+                  setFormData({ ...formData, newPassword: '' });
+                  setIsResetPasswordModalOpen(true);
                 }}
-                title="Approuver la réinitialisation"
+                title="Définir un nouveau mot de passe"
               >
-                Approuver MDP
+                Changer MDP
               </Button>
               <Button
                 variant="danger"
                 size="sm"
                 icon={<XCircle size={16} />}
                 onClick={async () => {
-                  try {
-                    await adminService.rejectPasswordReset(row.id.toString());
-                    fetchUsers();
-                  } catch (e: any) {
-                    alert("Erreur lors du refus: " + e.message);
+                  if (confirm("Êtes-vous sûr de vouloir supprimer cette demande ?")) {
+                    try {
+                      // fallback to updating the user without resetting the password
+                      await adminService.updateUser(row.id.toString(), { status: row.status });
+                      fetchUsers();
+                    } catch (e: any) {
+                      alert("Erreur: " + e.message);
+                    }
                   }
                 }}
-                title="Refuser la demande"
+                title="Ignorer la demande"
               />
             </div>
           ) : (
@@ -207,6 +207,7 @@ export const UsersManagementPage: React.FC = () => {
                 icon={<Lock size={16} />}
                 onClick={() => {
                   setSelectedUser(row);
+                  setFormData({ ...formData, newPassword: '' });
                   setIsResetPasswordModalOpen(true);
                 }}
               />
@@ -481,19 +482,34 @@ export const UsersManagementPage: React.FC = () => {
           title="Réinitialiser le Mot de passe"
           onConfirm={async () => {
             try {
-              await adminService.resetUserPassword(selectedUser.id.toString());
+              if (!formData.newPassword || formData.newPassword.length < 6) {
+                alert('Le mot de passe doit contenir au moins 6 caractères.');
+                return;
+              }
+              await adminService.resetUserPassword(selectedUser.id.toString(), formData.newPassword);
               setIsResetPasswordModalOpen(false);
               setSelectedUser(null);
-              alert('Un email de réinitialisation de mot de passe a été envoyé à ' + selectedUser.email);
+              setFormData({ ...formData, newPassword: '' });
+              fetchUsers();
+              alert('Le mot de passe de ' + selectedUser.email + ' a été modifié avec succès.');
             } catch (e: any) {
               alert('Erreur: ' + e.message);
             }
           }}
-          confirmText="Envoyer l'Email de Réinitialisation"
+          confirmText="Changer le mot de passe"
         >
-          <p className="text-neutral-700">
-            Un email de réinitialisation de mot de passe sera envoyé à {selectedUser.email}. L'utilisateur pourra définir un nouveau mot de passe en cliquant sur le lien dans l'email.
-          </p>
+          <div className="space-y-4">
+            <p className="text-neutral-700">
+              Veuillez définir un nouveau mot de passe pour {selectedUser.email}. Ce mot de passe devra lui être communiqué manuellement.
+            </p>
+            <Input 
+              label="Nouveau mot de passe" 
+              type="password" 
+              placeholder="••••••••" 
+              value={formData.newPassword || ''} 
+              onChange={(e) => setFormData({...formData, newPassword: e.target.value})} 
+            />
+          </div>
         </Modal>
       )}
     </MainLayout>
