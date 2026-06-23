@@ -30,6 +30,8 @@
     "axios": "^1.17.0",
     "date-fns": "^4.4.0",
     "eslint": "^10.4.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.17.0",
     "postcss": "^8.5.15",
     "prettier": "^3.8.4",
@@ -38,6 +40,7 @@
     "react-router-dom": "^7.17.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
