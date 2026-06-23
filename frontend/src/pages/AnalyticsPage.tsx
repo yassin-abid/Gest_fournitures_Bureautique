@@ -16,6 +16,7 @@ import { Badge } from '@components/Badge';
 import { Select } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { analyticsService, DashboardData } from '@services/analyticsService';
+import { exportReport, ReportConfig } from '@utils/reportGenerator';
 
 export const AnalyticsPage: React.FC = () => {
   const [period, setPeriod] = useState('year');
@@ -41,6 +42,22 @@ export const AnalyticsPage: React.FC = () => {
     if (trend === 'up') return <TrendingUp size={16} className="text-amber-500" />;
     if (trend === 'down') return <TrendingDown size={16} className="text-green-500" />;
     return <Target size={16} className="text-blue-500" />;
+  };
+
+  const handleExport = (format: 'pdf' | 'excel') => {
+    if (!data) return;
+    const config: ReportConfig = {
+      title: `Bilan et Dépenses Mensuelles`,
+      filename: `bilan_depenses_${new Date().getTime()}`,
+      columns: ['Mois', 'Dépenses (DA)', 'Nombre de Commandes'],
+      data: data.monthlyData.map(d => [d.month, d.amount.toString(), d.orders.toString()])
+    };
+    try {
+      exportReport(format, config);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de l'export");
+    }
   };
 
   const urgencyVariant = (u: string) =>
@@ -86,8 +103,8 @@ export const AnalyticsPage: React.FC = () => {
               onChange={(e) => setPeriod(e.target.value)}
               className="w-48"
             />
-            <Button variant="outline" icon={<FileText size={18} />}>PDF</Button>
-            <Button variant="outline" icon={<FileSpreadsheet size={18} />}>Excel</Button>
+            <Button variant="outline" icon={<FileText size={18} />} onClick={() => handleExport('pdf')}>PDF</Button>
+            <Button variant="outline" icon={<FileSpreadsheet size={18} />} onClick={() => handleExport('excel')}>Excel</Button>
           </div>
         </div>
 
@@ -313,10 +330,10 @@ export const AnalyticsPage: React.FC = () => {
                 <p className="text-sm text-neutral-500">Rapport de tous les achats, dépenses et prévisions pour la direction</p>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" icon={<FileText size={18} />} onClick={() => alert('Export PDF en cours...')}>
+                <Button variant="outline" icon={<FileText size={18} />} onClick={() => handleExport('pdf')}>
                   Exporter en PDF
                 </Button>
-                <Button variant="primary" icon={<Download size={18} />} onClick={() => alert('Export Excel en cours...')}>
+                <Button variant="primary" icon={<Download size={18} />} onClick={() => handleExport('excel')}>
                   Exporter en Excel
                 </Button>
               </div>
