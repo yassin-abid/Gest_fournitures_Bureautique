@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, X, Loader2, Package, ShoppingCart } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody, CardFooter } from '@components/Card';
 import { Button } from '@components/Button';
@@ -28,6 +28,7 @@ export const RequestDetailsPage: React.FC = () => {
   
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isDeliverModalOpen, setIsDeliverModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
   const fetchRequest = async () => {
@@ -84,6 +85,17 @@ export const RequestDetailsPage: React.FC = () => {
     }
   };
 
+  const handleDeliver = async () => {
+    if (!id) return;
+    try {
+      await requestsService.deliverRequest(Number(id));
+      setIsDeliverModalOpen(false);
+      fetchRequest();
+    } catch (err: any) {
+      alert("Erreur lors de la livraison: " + err.message);
+    }
+  };
+
   const handleReject = async () => {
     if (!id) return;
     if (!rejectionReason.trim()) {
@@ -113,6 +125,13 @@ export const RequestDetailsPage: React.FC = () => {
   if (!request) return null;
 
   const canApproveReject = request.status === 'en_attente' && (user?.role === 'responsable_service' || user?.role === 'admin');
+  const canDeliver = request.status === 'approuvée' && (user?.role === 'gestionnaire_stock' || user?.role === 'responsable_achats' || user?.role === 'admin');
+  
+  const hasInsufficientStock = request.items.some(item => {
+    // @ts-ignore - article is populated by the backend even though the frontend type might not explicitly declare it
+    const available = item.article?.quantity || 0;
+    return available < item.quantity;
+  });
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -256,7 +275,7 @@ export const RequestDetailsPage: React.FC = () => {
         {/* Actions */}
         {canApproveReject && (
           <Card>
-            <CardFooter>
+            <CardFooter className="flex gap-4">
               <Button
                 variant="danger"
                 icon={<X size={20} />}
@@ -274,6 +293,31 @@ export const RequestDetailsPage: React.FC = () => {
             </CardFooter>
           </Card>
         )}
+
+        {canDeliver && (
+          <Card>
+            <CardFooter className="flex gap-4">
+              <Button
+                variant="primary"
+                icon={<Package size={20} />}
+                onClick={() => setIsDeliverModalOpen(true)}
+                disabled={hasInsufficientStock}
+                title={hasInsufficientStock ? 'Stock insuffisant pour livrer' : ''}
+              >
+                Livrer la Demande
+              </Button>
+              {hasInsufficientStock && (
+                <Button
+                  variant="outline"
+                  icon={<ShoppingCart size={20} />}
+                  onClick={() => navigate(`/orders/create?requestId=${request.id}`)}
+                >
+                  Créer une commande
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        )}
       </div>
 
       {/* Approve Modal */}
@@ -286,7 +330,7 @@ export const RequestDetailsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <Alert type="success">
-            Cela approuvera la demande et déduira automatiquement les quantités du stock.
+            Cela approuvera la demande. Le stock sera déduit ultérieurement lors de la livraison.
           </Alert>
           <div className="bg-neutral-50 p-4 rounded-lg">
             <p className="text-sm text-neutral-600">Numéro de Demande</p>
@@ -317,6 +361,24 @@ export const RequestDetailsPage: React.FC = () => {
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
           />
+        </div>
+      </Modal>
+      {/* Deliver Modal */}
+      <Modal
+        isOpen={isDeliverModalOpen}
+        onClose={() => setIsDeliverModalOpen(false)}
+        title="Livrer la Demande"
+        onConfirm={handleDeliver}
+        confirmText="Livrer"
+      >
+        <div className="space-y-4">
+          <Alert type="success">
+            Cela déduira les quantités du stock et marquera la demande comme livrée.
+          </Alert>
+          <div className="bg-neutral-50 p-4 rounded-lg">
+            <p className="text-sm text-neutral-600">Numéro de Demande</p>
+            <p className="font-semibold text-neutral-900">{request.requestNumber}</p>
+          </div>
         </div>
       </Modal>
     </MainLayout>

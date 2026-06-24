@@ -155,11 +155,33 @@ export const requestsService = {
       }
     });
 
-    // Auto-déduction de stock si approuvé
-    for (const item of req.items) {
-      const article = await prisma.article.findUnique({ where: { id: item.articleId } });
-      if (!article) continue;
+    // Le stock n'est pas déduit ici. Il le sera lors de l'étape de livraison (deliver).
 
+    return this.getById(req.id);
+  },
+
+  async deliver(id: number, delivererId: number) {
+    const req = await prisma.supplyRequest.findUnique({
+      where: { id },
+      include: { items: { include: { article: true } } },
+    });
+
+    if (!req) throw new AppError('Demande introuvable', 404);
+    if (req.status !== 'approuvée') {
+      throw new AppError('Seules les demandes approuvées peuvent être livrées', 400);
+    }
+
+    // Check stock first
+    for (const item of req.items) {
+      const currentStock = item.article.quantity || 0;
+      if (currentStock < item.quantity) {
+        throw new AppError(`Stock insuffisant pour l'article ${item.article.name} (Requis: ${item.quantity}, Actuel: ${currentStock}). Veuillez d'abord vous réapprovisionner.`, 400);
+      }
+    }
+
+    // Deduct stock and create movements
+    for (const item of req.items) {
+      const article = item.article;
       const previousStock = article.quantity || 0;
       const newStock = previousStock - item.quantity;
 
@@ -170,8 +192,8 @@ export const requestsService = {
           quantity: item.quantity,
           previousStock,
           newStock,
-          reason: `Approbation demande ${req.requestNumber}`,
-          userId: approverId,
+          reason: `Livraison demande ${req.requestNumber}`,
+          userId: delivererId,
         },
       });
 
@@ -193,7 +215,21 @@ export const requestsService = {
       }
     }
 
-    return this.getById(req.id);
+    await prisma.supplyRequest.update({
+      where: { id },
+      data: { status: 'livrée' },
+    });
+
+    await prisma.validation.create({
+      data: {
+        requestId: id,
+        approverId: delivererId,
+        decision: 'livrée',
+        comment: 'Livraison effectuée',
+      }
+    });
+
+    return this.getById(id);
   },
 
   async reject(id: number, rejecterId: number, reason: string) {

@@ -49,6 +49,12 @@ export const requestsService = {
     return response.data;
   },
 
+  // Deliver request (deducts stock)
+  deliverRequest: async (id: number): Promise<SupplyRequest> => {
+    const response = await apiClient.post<SupplyRequest>(`/requests/${id}/deliver`, {});
+    return response.data;
+  },
+
   // Reject request
   rejectRequest: async (id: number, reason: string): Promise<SupplyRequest> => {
     const response = await apiClient.post<SupplyRequest>(`/requests/${id}/reject`, { reason });

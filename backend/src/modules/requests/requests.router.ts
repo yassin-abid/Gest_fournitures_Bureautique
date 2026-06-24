@@ -52,6 +52,13 @@ router.post('/:id/approve', authenticate, audit('approve', 'SupplyRequest'), asy
   } catch (err) { next(err); }
 });
 
+router.post('/:id/deliver', authenticate, audit('deliver', 'SupplyRequest'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const result = await requestsService.deliver(Number(req.params.id), req.user!.userId);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/reject', authenticate, audit('reject', 'SupplyRequest'), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const result = await requestsService.reject(Number(req.params.id), req.user!.userId, req.body.reason);
