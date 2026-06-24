@@ -10,9 +10,37 @@ export class AiService {
       throw new Error("La clé API Gemini (GEMINI_API_KEY) n'est pas configurée sur le serveur.");
     }
 
+    let targetModelName = 'gemini-1.5-flash';
+
     try {
-      // Use the recommended model for text
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      // Step 1: Auto-detect available models if the default one fails
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const data = await response.json();
+        
+        if (data && data.models) {
+          // Find the first model that supports generateContent
+          const validModels = data.models.filter((m: any) => 
+            m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent')
+          );
+          
+          if (validModels.length > 0) {
+            // Prefer gemini-1.5-flash if available, else pick the first text model
+            const flashModel = validModels.find((m: any) => m.name.includes('gemini-1.5-flash'));
+            const proModel = validModels.find((m: any) => m.name.includes('gemini-1.5-pro') || m.name.includes('gemini-pro'));
+            
+            const selected = flashModel || proModel || validModels[0];
+            // Remove 'models/' prefix if present because the SDK adds it
+            targetModelName = selected.name.replace('models/', '');
+            console.log(`Auto-detected Gemini model: ${targetModelName}`);
+          }
+        }
+      } catch (e) {
+        console.error("Erreur lors de l'auto-détection du modèle, utilisation de la valeur par défaut.", e);
+      }
+
+      // Step 2: Use the detected model
+      const model = genAI.getGenerativeModel({ model: targetModelName });
 
       const prompt = `
 Tu es un assistant IA professionnel spécialisé dans la gestion des fournitures bureautiques.
@@ -34,8 +62,8 @@ RÉPONSE :
       const response = await result.response;
       return response.text();
     } catch (error: any) {
-      console.error('Erreur IA:', error);
-      throw new Error("Impossible de générer une réponse avec l'IA. " + error.message);
+      console.error('Erreur IA principale:', error);
+      throw new Error(`Le modèle IA (${targetModelName}) n'est pas disponible ou la clé API est invalide. Détails: ${error.message}`);
     }
   }
 }
