@@ -62,26 +62,29 @@ export const CreateOrderPage: React.FC = () => {
         if (requestId) {
           const reqData = await requestsService.getRequestById(Number(requestId));
           if (reqData && reqData.items) {
-            const prefilledItems = reqData.items.map(item => {
+            const prefilledItems = reqData.items.reduce((acc, item) => {
               const articleInfo = artRes.data.find(a => a.id === item.articleId);
               const requestedQty = item.approvedQuantity || item.quantity;
               const currentStock = articleInfo?.quantity || 0;
               const diff = requestedQty - currentStock;
               const orderQty = Math.max(diff, 0); // Par défaut la différence
               
-              const unitPrice = articleInfo?.unitPrice || 0;
-              return {
-                id: `item-${Date.now()}-${item.articleId}`,
-                articleId: item.articleId,
-                articleName: articleInfo?.name || item.articleName || 'Article Inconnu',
-                quantity: orderQty,
-                unitPrice: unitPrice,
-                totalPrice: orderQty * unitPrice,
-                notes: item.notes || '',
-                stockActuel: currentStock,
-                qteDemandee: requestedQty
-              };
-            });
+              if (orderQty > 0) {
+                const unitPrice = articleInfo?.unitPrice || 0;
+                acc.push({
+                  id: `item-${Date.now()}-${item.articleId}`,
+                  articleId: item.articleId,
+                  articleName: articleInfo?.name || item.articleName || 'Article Inconnu',
+                  quantity: orderQty,
+                  unitPrice: unitPrice,
+                  totalPrice: orderQty * unitPrice,
+                  notes: item.notes || '',
+                  stockActuel: currentStock,
+                  qteDemandee: requestedQty
+                });
+              }
+              return acc;
+            }, [] as OrderItemUI[]);
             setItems(prefilledItems);
           }
         }
