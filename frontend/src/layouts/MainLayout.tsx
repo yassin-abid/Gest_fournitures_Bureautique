@@ -5,6 +5,7 @@
 import React from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { Chatbot } from '../components/Chatbot';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {children}
         </div>
       </main>
+      <Chatbot />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import stockRouter from './modules/stock/stock.router';
 import adminRouter from './modules/admin/admin.router';
 import reportsRouter from './modules/reports/reports.router';
 import analyticsRouter from './modules/analytics/analytics.router';
+import { aiRouter } from './modules/ai/ai.router';
 
 const app = express();
 
@@ -35,6 +36,7 @@ apiRouter.use('/stock', stockRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/reports', reportsRouter);
 apiRouter.use('/analytics', analyticsRouter);
+apiRouter.use('/ai', aiRouter);
 
 app.use('/api', apiRouter);
 

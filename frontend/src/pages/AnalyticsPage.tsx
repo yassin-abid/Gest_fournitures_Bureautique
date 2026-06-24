@@ -46,12 +46,45 @@ export const AnalyticsPage: React.FC = () => {
 
   const handleExport = (format: 'pdf' | 'excel') => {
     if (!data) return;
+    
+    const combinedData: any[][] = [];
+    
+    // Section 1: Dépenses
+    combinedData.push(['--- DÉPENSES MENSUELLES ---', '', '']);
+    combinedData.push(['Mois', 'Dépenses (DT)', 'Nombre de Commandes']);
+    data.monthlyData.forEach(d => combinedData.push([d.month, d.amount.toString(), d.orders.toString()]));
+    combinedData.push(['', '', '']);
+    
+    // Section 2: Catégories
+    combinedData.push(['--- DÉPENSES PAR CATÉGORIE ---', '', '']);
+    combinedData.push(['Catégorie', 'Dépenses (DT)', 'Pourcentage']);
+    data.categorySpending.forEach(c => combinedData.push([c.name, c.amount.toString(), `${c.percentage}%`]));
+    combinedData.push(['', '', '']);
+    
+    // Section 3: Services
+    combinedData.push(['--- DÉPENSES PAR SERVICE ---', '', '']);
+    combinedData.push(['Service', 'Dépenses (DT)', 'Pourcentage']);
+    data.departmentSpending.forEach(d => combinedData.push([d.name, d.amount.toString(), `${d.percentage}%`]));
+    combinedData.push(['', '', '']);
+    
+    // Section 4: Alertes
+    combinedData.push(['--- ALERTES STOCK ---', '', '']);
+    combinedData.push(['Article', 'Stock Actuel', 'Seuil Minimum']);
+    data.criticalStock.forEach(c => combinedData.push([c.article, c.stock.toString(), c.threshold.toString()]));
+    combinedData.push(['', '', '']);
+    
+    // Section 5: Prévisions IA
+    combinedData.push(['--- PRÉVISIONS IA (1 MOIS) ---', '', '']);
+    combinedData.push(['Article', 'Besoin Prévu', 'Confiance']);
+    data.aiForecasts.forEach(f => combinedData.push([f.article, f.forecast1m.toString(), `${f.confidence}%`]));
+
     const config: ReportConfig = {
-      title: `Bilan et Dépenses Mensuelles`,
-      filename: `bilan_depenses_${new Date().getTime()}`,
-      columns: ['Mois', 'Dépenses (DT)', 'Nombre de Commandes'],
-      data: data.monthlyData.map(d => [d.month, d.amount.toString(), d.orders.toString()])
+      title: `Bilan Complet et Prévisions`,
+      filename: `bilan_complet_${new Date().getTime()}`,
+      columns: ['Section', 'Détail 1', 'Détail 2'],
+      data: combinedData
     };
+
     try {
       exportReport(format, config);
     } catch (e) {
