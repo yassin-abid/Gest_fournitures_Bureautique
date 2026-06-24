@@ -3,8 +3,8 @@
  * Track stock in/out and adjustments — Enhanced for Gestionnaire de Stock
  */
 
-import React, { useState, useMemo } from 'react';
-import { ArrowUp, ArrowDown, Wrench, Plus, AlertTriangle, CheckCircle, FileDown } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ArrowUp, ArrowDown, Wrench, Plus, AlertTriangle, CheckCircle, FileDown, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -14,6 +14,8 @@ import { Badge } from '@components/Badge';
 import { Select, Input, Textarea } from '@components/FormInputs';
 import { Modal } from '@components/Modal';
 import type { StockMovement } from '@/types/stock';
+import { stockService } from '@services/stockService';
+import { catalogService } from '@services/catalogService';
 
 type ModalMode = 'entree' | 'anomalie' | null;
 
@@ -32,34 +34,39 @@ export const StockMovementsPage: React.FC = () => {
   const [formReason, setFormReason] = useState('');
   const [formNotes, setFormNotes] = useState('');
 
-  const articleOptions = [
-    { value: 'Papier A4 (500 feuilles)', label: 'Papier A4 (500 feuilles)' },
-    { value: 'Stylo Bille (Bleu)', label: 'Stylo Bille (Bleu)' },
-    { value: 'Chemise Classeur (Jaune)', label: 'Chemise Classeur (Jaune)' },
-    { value: 'Agrafeuse de Bureau', label: 'Agrafeuse de Bureau' },
-    { value: 'Ruban Adhésif (12mm)', label: 'Ruban Adhésif (12mm)' },
-    { value: 'Colle en Bâton', label: 'Colle en Bâton' },
-    { value: 'Toner Laser HP 85A', label: 'Toner Laser HP 85A' },
-  ];
+  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [articles, setArticles] = useState<{value: string, label: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [mockMovements, setMockMovements] = useState<StockMovement[]>([
-    { id: 'mov-001', articleId: 'art-001', articleName: 'Papier A4 (500 feuilles)', movementType: 'in', quantity: 100, reference: 'ORD-001', reason: 'Bon de Commande', notes: 'Livraison reçue de Office Pro', userId: 'user-001', userName: 'Mourad Gharbi', createdAt: '2024-06-10 14:30' },
-    { id: 'mov-002', articleId: 'art-002', articleName: 'Stylo Bille (Bleu)', movementType: 'out', quantity: 25, reference: 'REQ-001', reason: 'Demande de Fournitures', notes: 'Distribué au Dpt. Commercial', userId: 'user-002', userName: 'Mourad Gharbi', createdAt: '2024-06-10 11:15' },
-    { id: 'mov-003', articleId: 'art-003', articleName: 'Chemise Classeur (Jaune)', movementType: 'adjustment', quantity: -5, reference: 'INV-001', reason: 'Inventaire', notes: 'Endommagé lors de la manutention', userId: 'user-003', userName: 'Mourad Gharbi', createdAt: '2024-06-09 16:45' },
-    { id: 'mov-004', articleId: 'art-004', articleName: 'Agrafeuse de Bureau', movementType: 'in', quantity: 10, reference: 'ORD-002', reason: 'Bon de Commande', notes: 'Réapprovisionnement fournisseur', userId: 'user-001', userName: 'Mourad Gharbi', createdAt: '2024-06-09 10:20' },
-    { id: 'mov-005', articleId: 'art-007', articleName: 'Toner Laser HP 85A', movementType: 'adjustment', quantity: -3, reference: 'ANOM-001', reason: 'Anomalie — Casse', notes: 'Cartouches défectueuses à la réception', userId: 'user-003', userName: 'Mourad Gharbi', createdAt: '2024-06-08 13:00' },
-    { id: 'mov-006', articleId: 'art-001', articleName: 'Papier A4 (500 feuilles)', movementType: 'adjustment', quantity: 3, reference: 'ADJ-001', reason: 'Correction d\'inventaire', notes: 'Stock trouvé lors de l\'audit', userId: 'user-003', userName: 'Mourad Gharbi', createdAt: '2024-06-07 09:30' },
-  ]);
+  const fetchMovements = async () => {
+    setIsLoading(true);
+    try {
+      const [movRes, artRes] = await Promise.all([
+        stockService.getMovements(1, 100),
+        catalogService.getArticles(1, 1000)
+      ]);
+      setMovements(movRes.data);
+      setArticles(artRes.data.map(a => ({ value: a.id.toString(), label: a.name })));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+  }, []);
 
   const filteredMovements = useMemo(() => {
-    return mockMovements.filter((movement) => {
+    return movements.filter((movement) => {
       const matchesSearch =
         (movement.articleName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
         (movement.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       const matchesType = !selectedType || movement.movementType === selectedType;
       return matchesSearch && matchesType;
     });
-  }, [searchTerm, selectedType, mockMovements]);
+  }, [searchTerm, selectedType, movements]);
 
   const getMovementIcon = (type: string) => {
     switch (type) {
@@ -97,30 +104,37 @@ export const StockMovementsPage: React.FC = () => {
     setFormNotes('');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!formArticle || !formQty) { alert('Veuillez remplir tous les champs obligatoires'); return; }
     const qty = parseInt(formQty);
     if (isNaN(qty) || qty <= 0) { alert('Quantité invalide'); return; }
 
-    const newMovement: StockMovement = {
-      id: `mov-${Date.now()}`,
-      articleId: `art-${Date.now()}`,
-      articleName: formArticle,
-      movementType: modalMode === 'entree' ? 'in' : 'adjustment',
-      quantity: modalMode === 'entree' ? qty : -qty,
-      reference: formRef || `${modalMode === 'entree' ? 'REC' : 'ANOM'}-${Date.now()}`,
-      reason: formReason || (modalMode === 'entree' ? 'Réception de commande' : 'Anomalie signalée'),
-      notes: formNotes,
-      userId: 'usr-stock',
-      userName: 'Mourad Gharbi',
-      createdAt: new Date().toLocaleString('fr-FR'),
-    };
-
-    setMockMovements(prev => [newMovement, ...prev]);
-    const msg = modalMode === 'entree' ? 'Entrée de stock enregistrée' : 'Anomalie signalée';
-    setSuccessMessage(`✅ ${msg} avec succès pour "${formArticle}".`);
-    setTimeout(() => setSuccessMessage(''), 4000);
-    setModalMode(null);
+    try {
+      if (modalMode === 'entree') {
+        await stockService.createMovement({
+          articleId: formArticle,
+          movementType: 'in',
+          quantity: qty,
+          reference: formRef || `REC-${Date.now()}`,
+          reason: formReason || 'Réception de commande',
+          notes: formNotes
+        });
+      } else {
+        await stockService.adjustStock(
+          formArticle, 
+          -qty, 
+          `${formReason} - ${formNotes}`
+        );
+      }
+      
+      const msg = modalMode === 'entree' ? 'Entrée de stock enregistrée' : 'Anomalie signalée';
+      setSuccessMessage(`✅ ${msg} avec succès.`);
+      setTimeout(() => setSuccessMessage(''), 4000);
+      setModalMode(null);
+      fetchMovements();
+    } catch (e: any) {
+      alert("Erreur: " + e.message);
+    }
   };
 
   const handleExport = (format: string) => {
@@ -278,12 +292,16 @@ export const StockMovementsPage: React.FC = () => {
         <Card>
           <CardHeader title={`Historique des Mouvements (${filteredMovements.length})`} />
           <CardBody>
-            <DataTable<StockMovement>
-              columns={columns}
-              data={filteredMovements}
-              rowKey="id"
-              pageSize={10}
-            />
+            {isLoading ? (
+              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+            ) : (
+              <DataTable<StockMovement>
+                columns={columns}
+                data={filteredMovements}
+                rowKey="id"
+                pageSize={10}
+              />
+            )}
           </CardBody>
         </Card>
       </div>
@@ -301,7 +319,7 @@ export const StockMovementsPage: React.FC = () => {
             <p className="text-sm text-neutral-600">Enregistrez la réception d'une commande ou d'un réapprovisionnement.</p>
             <Select
               label="Article *"
-              options={[{ value: '', label: 'Sélectionner un article...' }, ...articleOptions]}
+              options={[{ value: '', label: 'Sélectionner un article...' }, ...articles]}
               value={formArticle}
               onChange={(e) => setFormArticle(e.target.value)}
             />
@@ -327,7 +345,7 @@ export const StockMovementsPage: React.FC = () => {
             </div>
             <Select
               label="Article concerné *"
-              options={[{ value: '', label: 'Sélectionner un article...' }, ...articleOptions]}
+              options={[{ value: '', label: 'Sélectionner un article...' }, ...articles]}
               value={formArticle}
               onChange={(e) => setFormArticle(e.target.value)}
             />

@@ -4,8 +4,8 @@
  * Enhanced for Gestionnaire de Stock role
  */
 
-import React, { useState, useMemo } from 'react';
-import { AlertTriangle, TrendingDown, TrendingUp, Package, Plus, ArrowDownCircle, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { AlertTriangle, TrendingDown, TrendingUp, Package, Plus, ArrowDownCircle, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -16,6 +16,7 @@ import { Select, Input, Textarea } from '@components/FormInputs';
 import { Alert } from '@components/Alert';
 import { Modal } from '@components/Modal';
 import type { StockStatus } from '@/types/stock';
+import { stockService } from '@services/stockService';
 
 type ModalMode = 'ajuster' | 'entree' | 'anomalie' | null;
 
@@ -30,25 +31,34 @@ export const StockStatusPage: React.FC = () => {
   const [formRef, setFormRef] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const [mockStockData, setMockStockData] = useState<StockStatus[]>([
-    { id: 'stock-001', articleId: 'art-001', code: 'OFF-001', name: 'Papier A4 (500 feuilles)', currentStock: 450, minStock: 100, maxStock: 500, unit: 'Rame', status: 'normal', lastMovement: '2024-06-10 14:30', updatedAt: '2024-06-10' },
-    { id: 'stock-002', articleId: 'art-002', code: 'PEN-001', name: 'Stylo Bille (Bleu)', currentStock: 75, minStock: 50, maxStock: 200, unit: 'Boîte', status: 'normal', lastMovement: '2024-06-09 10:15', updatedAt: '2024-06-09' },
-    { id: 'stock-003', articleId: 'art-003', code: 'FOLDER-001', name: 'Chemise Classeur (Jaune)', currentStock: 45, minStock: 80, maxStock: 300, unit: 'Pack', status: 'low', lastMovement: '2024-06-08 09:45', updatedAt: '2024-06-08' },
-    { id: 'stock-004', articleId: 'art-004', code: 'STAPLER-001', name: 'Agrafeuse de Bureau', currentStock: 8, minStock: 5, maxStock: 30, unit: 'Pièce', status: 'critical', lastMovement: '2024-06-07 16:20', updatedAt: '2024-06-07' },
-    { id: 'stock-005', articleId: 'art-005', code: 'TAPE-001', name: 'Ruban Adhésif (12mm)', currentStock: 520, minStock: 100, maxStock: 500, unit: 'Rouleau', status: 'excess', lastMovement: '2024-06-06 11:00', updatedAt: '2024-06-06' },
-    { id: 'stock-006', articleId: 'art-006', code: 'GLUE-001', name: 'Colle en Bâton', currentStock: 65, minStock: 80, maxStock: 250, unit: 'Boîte', status: 'low', lastMovement: '2024-06-05 13:30', updatedAt: '2024-06-05' },
-    { id: 'stock-007', articleId: 'art-007', code: 'TONER-001', name: 'Toner Laser HP 85A', currentStock: 2, minStock: 10, maxStock: 40, unit: 'Cartouche', status: 'critical', lastMovement: '2024-06-04 08:00', updatedAt: '2024-06-04' },
-  ]);
+  const [stockData, setStockData] = useState<StockStatus[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchStock = async () => {
+    setIsLoading(true);
+    try {
+      const res = await stockService.getStockStatus(1, 1000);
+      setStockData(res.data);
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStock();
+  }, []);
 
   const filteredStock = useMemo(() => {
-    return mockStockData.filter((item) => {
+    return stockData.filter((item) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.code.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = !selectedStatus || item.status === selectedStatus;
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, selectedStatus, mockStockData]);
+  }, [searchTerm, selectedStatus, stockData]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -94,32 +104,36 @@ export const StockStatusPage: React.FC = () => {
     setSelectedItem(null);
   };
 
-  const computeNewStatus = (qty: number, min: number, max: number): StockStatus['status'] => {
-    if (qty <= 0) return 'critical';
-    if (qty < min) return qty < min * 0.5 ? 'critical' : 'low';
-    if (qty > max) return 'excess';
-    return 'normal';
-  };
 
-  const handleConfirmModal = () => {
+  const handleConfirmModal = async () => {
     if (!selectedItem || !formQty) return;
     const qty = parseInt(formQty);
-    if (isNaN(qty) || qty <= 0) { alert('Quantité invalide'); return; }
+    if (isNaN(qty) || qty < 0) { alert('Quantité invalide'); return; }
 
-    setMockStockData(prev => prev.map(item => {
-      if (item.id !== selectedItem.id) return item;
-      let newStock = item.currentStock;
-      if (modalMode === 'entree') newStock += qty;
-      else if (modalMode === 'ajuster') newStock = qty;
-      else if (modalMode === 'anomalie') newStock = Math.max(0, item.currentStock - qty);
-      const newStatus = computeNewStatus(newStock, item.minStock, item.maxStock);
-      return { ...item, currentStock: newStock, status: newStatus, lastMovement: new Date().toLocaleString('fr-FR'), updatedAt: new Date().toISOString().split('T')[0] };
-    }));
+    try {
+      if (modalMode === 'entree') {
+        await stockService.createMovement({
+          articleId: selectedItem.articleId.toString(),
+          movementType: 'in',
+          quantity: qty,
+          reference: formRef || `REC-${Date.now()}`,
+          reason: 'Entrée manuelle',
+          notes: formNotes
+        });
+      } else if (modalMode === 'ajuster') {
+        await stockService.adjustStock(selectedItem.articleId.toString(), qty, `${formReason} - ${formNotes}`);
+      } else if (modalMode === 'anomalie') {
+        await stockService.adjustStock(selectedItem.articleId.toString(), Math.max(0, selectedItem.currentStock - qty), `Anomalie: ${formReason} - ${formNotes}`);
+      }
 
-    const labels: Record<NonNullable<ModalMode>, string> = { entree: 'Entrée de stock enregistrée', ajuster: 'Stock ajusté', anomalie: 'Anomalie signalée' };
-    setSuccessMessage(`✅ ${labels[modalMode!]} avec succès pour "${selectedItem.name}".`);
-    setTimeout(() => setSuccessMessage(''), 4000);
-    closeModal();
+      const labels: Record<NonNullable<ModalMode>, string> = { entree: 'Entrée de stock enregistrée', ajuster: 'Stock ajusté', anomalie: 'Anomalie signalée' };
+      setSuccessMessage(`✅ ${labels[modalMode!]} avec succès pour "${selectedItem.name}".`);
+      setTimeout(() => setSuccessMessage(''), 4000);
+      closeModal();
+      fetchStock();
+    } catch (e: any) {
+      alert("Erreur: " + e.message);
+    }
   };
 
   const modalTitles: Record<NonNullable<ModalMode>, string> = {
@@ -182,10 +196,10 @@ export const StockStatusPage: React.FC = () => {
     },
   ];
 
-  const criticalCount = mockStockData.filter((s) => s.status === 'critical').length;
-  const lowCount = mockStockData.filter((s) => s.status === 'low').length;
-  const excessCount = mockStockData.filter((s) => s.status === 'excess').length;
-  const normalCount = mockStockData.filter((s) => s.status === 'normal').length;
+  const criticalCount = stockData.filter((s) => s.status === 'critical').length;
+  const lowCount = stockData.filter((s) => s.status === 'low').length;
+  const excessCount = stockData.filter((s) => s.status === 'excess').length;
+  const normalCount = stockData.filter((s) => s.status === 'normal').length;
 
   return (
     <MainLayout title="État du Stock">
@@ -276,12 +290,16 @@ export const StockStatusPage: React.FC = () => {
         <Card>
           <CardHeader title={`Articles en Stock (${filteredStock.length})`} />
           <CardBody>
-            <DataTable<StockStatus>
-              columns={columns}
-              data={filteredStock}
-              rowKey="id"
-              pageSize={10}
-            />
+            {isLoading ? (
+              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+            ) : (
+              <DataTable<StockStatus>
+                columns={columns}
+                data={filteredStock}
+                rowKey="id"
+                pageSize={10}
+              />
+            )}
           </CardBody>
         </Card>
       </div>

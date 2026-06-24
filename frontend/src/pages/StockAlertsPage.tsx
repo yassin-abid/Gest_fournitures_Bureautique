@@ -3,8 +3,8 @@
  * Manage stock alerts and warnings
  */
 
-import React, { useState, useMemo } from 'react';
-import { AlertCircle, CheckCircle, AlertTriangle, Zap } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { AlertCircle, CheckCircle, AlertTriangle, Zap, Loader2 } from 'lucide-react';
 import { MainLayout } from '@layouts/MainLayout';
 import { Card, CardHeader, CardBody } from '@components/Card';
 import { Button } from '@components/Button';
@@ -14,6 +14,7 @@ import { Badge } from '@components/Badge';
 import { Select } from '@components/FormInputs';
 import { Modal } from '@components/Modal';
 import type { StockAlert } from '@/types/stock';
+import { stockService } from '@services/stockService';
 
 export const StockAlertsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,73 +23,33 @@ export const StockAlertsPage: React.FC = () => {
   const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<StockAlert | null>(null);
 
-  const mockAlerts: StockAlert[] = [
-    {
-      id: 'alert-001',
-      articleId: 'art-004',
-      articleName: 'Stapler (Desktop)',
-      currentStock: 8,
-      minStock: 5,
-      maxStock: 30,
-      alertType: 'critical',
-      status: 'active',
-      createdAt: '2024-06-10 14:00',
-    },
-    {
-      id: 'alert-002',
-      articleId: 'art-003',
-      articleName: 'File Folder (Yellow)',
-      currentStock: 45,
-      minStock: 80,
-      maxStock: 300,
-      alertType: 'low',
-      status: 'active',
-      createdAt: '2024-06-09 10:30',
-    },
-    {
-      id: 'alert-003',
-      articleId: 'art-005',
-      articleName: 'Scotch Tape (12mm)',
-      currentStock: 520,
-      minStock: 100,
-      maxStock: 500,
-      alertType: 'high',
-      status: 'active',
-      createdAt: '2024-06-08 15:45',
-    },
-    {
-      id: 'alert-004',
-      articleId: 'art-006',
-      articleName: 'Office Glue Stick',
-      currentStock: 65,
-      minStock: 80,
-      maxStock: 250,
-      alertType: 'low',
-      status: 'active',
-      createdAt: '2024-06-07 09:15',
-    },
-    {
-      id: 'alert-005',
-      articleId: 'art-002',
-      articleName: 'Ballpoint Pen (Blue)',
-      currentStock: 75,
-      minStock: 50,
-      maxStock: 200,
-      alertType: 'low',
-      status: 'resolved',
-      createdAt: '2024-06-01 12:00',
-      resolvedAt: '2024-06-06 11:30',
-    },
-  ];
+  const [alerts, setAlerts] = useState<StockAlert[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchAlerts = async () => {
+    setIsLoading(true);
+    try {
+      const res = await stockService.getAlerts(1, 1000, '');
+      setAlerts(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
 
   const filteredAlerts = useMemo(() => {
-    return mockAlerts.filter((alert) => {
+    return alerts.filter((alert) => {
       const matchesSearch = (alert.articleName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       const matchesType = !selectedAlertType || alert.alertType === selectedAlertType;
       const matchesStatus = !selectedStatus || alert.status === selectedStatus;
       return matchesSearch && matchesType && matchesStatus;
     });
-  }, [searchTerm, selectedAlertType, selectedStatus]);
+  }, [searchTerm, selectedAlertType, selectedStatus, alerts]);
 
   const getAlertIcon = (type: string) => {
     switch (type) {
@@ -198,9 +159,17 @@ export const StockAlertsPage: React.FC = () => {
   const resolvedAlerts = filteredAlerts.filter((a) => a.status === 'resolved').length;
   const criticalAlerts = filteredAlerts.filter((a) => a.alertType === 'critical').length;
 
-  const handleResolveAlert = () => {
-    setIsResolveModalOpen(false);
-    setSelectedAlert(null);
+  const handleResolveAlert = async () => {
+    if (!selectedAlert) return;
+    try {
+      await stockService.resolveAlert(selectedAlert.id);
+      fetchAlerts();
+      setIsResolveModalOpen(false);
+      setSelectedAlert(null);
+    } catch (e: any) {
+      console.error(e);
+      alert("Erreur lors de la résolution de l'alerte: " + e.message);
+    }
   };
 
   return (
@@ -303,7 +272,9 @@ export const StockAlertsPage: React.FC = () => {
         <Card>
           <CardHeader title={`Alertes (${filteredAlerts.length})`} />
           <CardBody>
-            {filteredAlerts.length === 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary-500" size={32} /></div>
+            ) : filteredAlerts.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle size={48} className="mx-auto text-green-600 mb-4" />
                 <p className="text-neutral-600">Aucune alerte à afficher</p>
