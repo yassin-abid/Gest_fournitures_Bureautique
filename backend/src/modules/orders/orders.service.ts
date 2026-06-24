@@ -2,6 +2,7 @@ import { prisma } from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { getPrismaSkip, buildPaginatedResult } from '../../utils/pagination';
 import { Prisma } from '@prisma/client';
+import { requestsService } from '../requests/requests.service';
 
 // Helper: fetch requestNumber for a single order id via raw SQL
 async function fetchRequestNumber(orderId: number): Promise<{ requestId: number; requestNumber: string } | null> {
@@ -226,13 +227,18 @@ export const ordersService = {
       },
     });
 
-    // Update linked SupplyRequest via raw SQL
+    // Update linked SupplyRequest via requestsService to ensure stock is deducted for the request
     if (allReceived) {
       const linked = await prisma.$queryRaw<Array<{ demande_id: number }>>`
         SELECT demande_id FROM commandes WHERE id = ${id} AND demande_id IS NOT NULL
       `;
       if (linked.length > 0 && linked[0].demande_id) {
-        await prisma.$executeRaw`UPDATE demandes SET statut = ${'livrée'} WHERE id = ${linked[0].demande_id}`;
+        try {
+          await requestsService.deliver(linked[0].demande_id, userId);
+        } catch (err: any) {
+          console.error('[orders.service] Impossible de livrer automatiquement la demande:', err.message);
+          // Si le stock reste insuffisant (commande partielle par rapport à la demande ?), la demande reste en statut 'traitee'.
+        }
       }
     }
 

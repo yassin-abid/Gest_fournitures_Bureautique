@@ -167,8 +167,8 @@ export const requestsService = {
     });
 
     if (!req) throw new AppError('Demande introuvable', 404);
-    if (req.status !== 'approuvée') {
-      throw new AppError('Seules les demandes approuvées peuvent être livrées', 400);
+    if (!req.status || !['approuvée', 'traitee'].includes(req.status)) {
+      throw new AppError('Seules les demandes approuvées ou traitées peuvent être livrées', 400);
     }
 
     // Check stock first
