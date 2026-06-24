@@ -12,7 +12,7 @@ export class AiService {
 
     try {
       // Use the recommended model for text
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
       const prompt = `
 Tu es un assistant IA professionnel spécialisé dans la gestion des fournitures bureautiques.
