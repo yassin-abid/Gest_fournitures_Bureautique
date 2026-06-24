@@ -35,6 +35,9 @@ RÉPONSE :
       return response.text();
     } catch (error: any) {
       console.error('Erreur IA principale:', error);
+      if (error.message && error.message.includes('503')) {
+        throw new Error("Les serveurs de Google (Gemini) sont actuellement surchargés. Veuillez réessayer dans quelques instants.");
+      }
       throw new Error(`Erreur lors de la communication avec l'API Gemini: ${error.message}`);
     }
   }
