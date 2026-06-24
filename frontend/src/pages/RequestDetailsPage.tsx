@@ -133,6 +133,14 @@ export const RequestDetailsPage: React.FC = () => {
     return available < item.quantity;
   });
 
+  const postDeliveryCritical = request.status === 'livrée' ? request.items.filter(item => {
+    // @ts-ignore
+    const available = item.article?.quantity || 0;
+    // @ts-ignore
+    const minStock = item.article?.minStock || 0;
+    return available <= minStock;
+  }) : [];
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'en_attente': return 'warning';
@@ -180,6 +188,27 @@ export const RequestDetailsPage: React.FC = () => {
   return (
     <MainLayout title={`Demande ${request.requestNumber}`}>
       <div className="space-y-6">
+        {postDeliveryCritical.length > 0 && (
+          <Alert type="warning" closable>
+            <strong>Attention :</strong> Suite à cette livraison, le stock de certains articles est devenu critique : 
+            <ul className="list-disc ml-5 mt-1">
+              {postDeliveryCritical.map(item => (
+                // @ts-ignore
+                <li key={item.id}>{item.articleName} (Restant: {item.article?.quantity})</li>
+              ))}
+            </ul>
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate(`/orders/create`)}
+              >
+                Commander ces articles
+              </Button>
+            </div>
+          </Alert>
+        )}
+
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button

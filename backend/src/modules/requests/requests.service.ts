@@ -220,15 +220,6 @@ export const requestsService = {
       data: { status: 'livrée' },
     });
 
-    await prisma.validation.create({
-      data: {
-        requestId: id,
-        approverId: delivererId,
-        decision: 'livrée',
-        comment: 'Livraison effectuée',
-      }
-    });
-
     return this.getById(id);
   },
 
