@@ -296,25 +296,32 @@ export const RequestDetailsPage: React.FC = () => {
 
         {canDeliver && (
           <Card>
-            <CardFooter className="flex gap-4">
-              <Button
-                variant="primary"
-                icon={<Package size={20} />}
-                onClick={() => setIsDeliverModalOpen(true)}
-                disabled={hasInsufficientStock}
-                title={hasInsufficientStock ? 'Stock insuffisant pour livrer' : ''}
-              >
-                Livrer la Demande
-              </Button>
+            <CardFooter className="flex flex-col items-start gap-4">
               {hasInsufficientStock && (
-                <Button
-                  variant="outline"
-                  icon={<ShoppingCart size={20} />}
-                  onClick={() => navigate(`/orders/create?requestId=${request.id}`)}
-                >
-                  Créer une commande
-                </Button>
+                <Alert type="warning" className="w-full">
+                  <strong>Stock insuffisant :</strong> Au moins un article de cette demande n'a pas la quantité requise en stock. Vous devez vous réapprovisionner avant de pouvoir livrer.
+                </Alert>
               )}
+              <div className="flex gap-4">
+                <Button
+                  variant="primary"
+                  icon={<Package size={20} />}
+                  onClick={() => setIsDeliverModalOpen(true)}
+                  disabled={hasInsufficientStock}
+                  title={hasInsufficientStock ? 'Stock insuffisant pour livrer' : ''}
+                >
+                  Livrer la Demande
+                </Button>
+                {hasInsufficientStock && (
+                  <Button
+                    variant="outline"
+                    icon={<ShoppingCart size={20} />}
+                    onClick={() => navigate(`/orders/create?requestId=${request.id}`)}
+                  >
+                    Créer une commande
+                  </Button>
+                )}
+              </div>
             </CardFooter>
           </Card>
         )}

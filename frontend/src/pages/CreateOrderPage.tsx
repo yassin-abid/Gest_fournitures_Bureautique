@@ -23,6 +23,8 @@ interface OrderItemUI {
   unitPrice: number;
   totalPrice: number;
   notes: string;
+  stockActuel?: number;
+  qteDemandee?: number;
 }
 
 export const CreateOrderPage: React.FC = () => {
@@ -62,16 +64,22 @@ export const CreateOrderPage: React.FC = () => {
           if (reqData && reqData.items) {
             const prefilledItems = reqData.items.map(item => {
               const articleInfo = artRes.data.find(a => a.id === item.articleId);
-              const qty = item.approvedQuantity || item.quantity;
+              const requestedQty = item.approvedQuantity || item.quantity;
+              const currentStock = articleInfo?.quantity || 0;
+              const diff = requestedQty - currentStock;
+              const orderQty = Math.max(diff, 0); // Par défaut la différence
+              
               const unitPrice = articleInfo?.unitPrice || 0;
               return {
                 id: `item-${Date.now()}-${item.articleId}`,
                 articleId: item.articleId,
                 articleName: articleInfo?.name || item.articleName || 'Article Inconnu',
-                quantity: qty,
+                quantity: orderQty,
                 unitPrice: unitPrice,
-                totalPrice: qty * unitPrice,
-                notes: item.notes || ''
+                totalPrice: orderQty * unitPrice,
+                notes: item.notes || '',
+                stockActuel: currentStock,
+                qteDemandee: requestedQty
               };
             });
             setItems(prefilledItems);
@@ -135,6 +143,19 @@ export const CreateOrderPage: React.FC = () => {
 
   const removeItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id));
+  };
+
+  const updateItemQuantity = (id: string, newQty: number) => {
+    setItems(items.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          quantity: newQty,
+          totalPrice: newQty * item.unitPrice
+        };
+      }
+      return item;
+    }));
   };
 
   const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -297,11 +318,30 @@ export const CreateOrderPage: React.FC = () => {
                   <div key={item.id} className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50">
                     <div className="flex-1">
                       <p className="font-medium text-neutral-900">{item.articleName}</p>
+                      
+                      {item.qteDemandee !== undefined && item.stockActuel !== undefined && (
+                        <div className="text-xs text-warning-600 mt-1 mb-2 font-medium">
+                          Rappel Demande: {item.qteDemandee} demandés / {item.stockActuel} en stock actuel.
+                          {item.quantity < item.qteDemandee - item.stockActuel && (
+                             <span className="text-danger-600 ml-2">⚠️ La quantité commandée sera insuffisante pour livrer la demande complète.</span>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-4 mt-1 text-sm text-neutral-600">
-                        <span>Qté : {item.quantity}</span>
+                        <div className="flex items-center gap-2">
+                          <span>Qté :</span>
+                          <input 
+                            type="number" 
+                            min="1" 
+                            value={item.quantity}
+                            onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 border border-neutral-300 rounded text-sm focus:ring-primary-500 focus:border-primary-500"
+                          />
+                        </div>
                         <span>Prix unitaire : {item.unitPrice.toFixed(2)} DT</span>
                         <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} DT</span>
-                        {item.notes && <span className="italic">{item.notes}</span>}
+                        {item.notes && <span className="italic">"{item.notes}"</span>}
                       </div>
                     </div>
                     <Button variant="danger" size="sm" icon={<Trash2 size={16} />} onClick={() => removeItem(item.id)} />
