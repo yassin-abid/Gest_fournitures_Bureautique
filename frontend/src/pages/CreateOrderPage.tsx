@@ -66,10 +66,20 @@ export const CreateOrderPage: React.FC = () => {
               const articleInfo = artRes.data.find(a => a.id === item.articleId);
               const requestedQty = item.approvedQuantity || item.quantity;
               const currentStock = articleInfo?.quantity || 0;
-              const diff = requestedQty - currentStock;
-              const orderQty = Math.max(diff, 0); // Par défaut la différence
+              const projectedStock = currentStock - requestedQty;
+              const minStock = articleInfo?.minStock || 0;
+              const maxStock = articleInfo?.maxStock || 0;
               
-              if (orderQty > 0) {
+              if (projectedStock <= minStock) {
+                let orderQty = Math.max(requestedQty - currentStock, 0);
+                if (maxStock > 0 && maxStock > projectedStock) {
+                  orderQty = maxStock - projectedStock;
+                } else if (minStock > 0 && minStock >= projectedStock) {
+                  orderQty = (minStock - projectedStock) + 10; // arbitrary buffer
+                } else if (orderQty === 0) {
+                  orderQty = 10; // fallback buffer
+                }
+                
                 const unitPrice = articleInfo?.unitPrice || 0;
                 acc.push({
                   id: `item-${Date.now()}-${item.articleId}`,

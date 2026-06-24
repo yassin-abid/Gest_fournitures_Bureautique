@@ -331,6 +331,19 @@ export const RequestDetailsPage: React.FC = () => {
                   <strong>Stock insuffisant :</strong> Au moins un article de cette demande n'a pas la quantité requise en stock. Vous devez vous réapprovisionner avant de pouvoir livrer.
                 </Alert>
               )}
+              
+              {!hasInsufficientStock && (
+                request.items.some(item => {
+                  const available = (item as any).article?.quantity || 0;
+                  const min = (item as any).article?.minStock || 0;
+                  return (available - item.quantity) <= min;
+                })
+              ) && (
+                <Alert type="info" className="w-full">
+                  <strong>Suggestion d'approvisionnement :</strong> La livraison de cette demande entraînera le passage du stock de certains articles sous leur seuil minimum. Vous pouvez livrer la demande, mais il est conseillé de créer une commande pour rester dans la zone verte.
+                </Alert>
+              )}
+
               <div className="flex gap-4">
                 <Button
                   variant="primary"
@@ -341,7 +354,7 @@ export const RequestDetailsPage: React.FC = () => {
                 >
                   Livrer la Demande
                 </Button>
-                {hasInsufficientStock && (
+                {(hasInsufficientStock || request.items.some(item => ((item as any).article?.quantity || 0) - item.quantity <= ((item as any).article?.minStock || 0))) && (
                   <Button
                     variant="outline"
                     icon={<ShoppingCart size={20} />}
