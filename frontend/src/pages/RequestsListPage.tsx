@@ -284,17 +284,6 @@ export const RequestsListPage: React.FC = () => {
           {/* Responsable Achats actions */}
           {(user?.role === 'responsable_achats' || user?.role === 'admin') && (
             <>
-              {row.status === 'approuvée' && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus size={16} />}
-                  onClick={() => navigate(`/orders/create?requestId=${row.id}`)}
-                  title="Créer une commande pour cette demande"
-                >
-                  Commander
-                </Button>
-              )}
               {row.status === 'traitee' && (
                 <Badge variant="secondary">Commande en cours</Badge>
               )}
