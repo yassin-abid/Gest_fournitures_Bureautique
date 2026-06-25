@@ -49,6 +49,15 @@ export const Chatbot: React.FC = () => {
     if (!input.trim() || isLoading) return;
 
     const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: input.trim() };
+    
+    // Sauvegarde immédiate du message utilisateur dans la session
+    const currentHistoryStr = sessionStorage.getItem('chatHistory');
+    let currentHistory = currentHistoryStr ? JSON.parse(currentHistoryStr) : [];
+    
+    // On n'ajoute pas le message utilisateur si on l'a déjà fait via l'état React pour éviter les doublons 
+    // mais ici on a besoin que le sessionStorage soit à jour de suite.
+    // En fait, React va le faire avec le setMessages et useEffect.
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
@@ -56,10 +65,23 @@ export const Chatbot: React.FC = () => {
     try {
       const response = await aiService.chat(userMsg.text);
       const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: response.data.reply };
+      
+      // Update sessionStorage manually to ensure it's saved even if the component is unmounted (user changed page)
+      const latestHistoryStr = sessionStorage.getItem('chatHistory');
+      let latestHistory = latestHistoryStr ? JSON.parse(latestHistoryStr) : [];
+      latestHistory.push(aiMsg);
+      sessionStorage.setItem('chatHistory', JSON.stringify(latestHistory));
+
       setMessages(prev => [...prev, aiMsg]);
     } catch (err: any) {
       console.error(err);
       const errorMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: "❌ Désolé, je n'ai pas pu joindre le serveur. Veuillez vérifier votre clé API ou votre connexion." };
+      
+      const latestHistoryStr = sessionStorage.getItem('chatHistory');
+      let latestHistory = latestHistoryStr ? JSON.parse(latestHistoryStr) : [];
+      latestHistory.push(errorMsg);
+      sessionStorage.setItem('chatHistory', JSON.stringify(latestHistory));
+
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
