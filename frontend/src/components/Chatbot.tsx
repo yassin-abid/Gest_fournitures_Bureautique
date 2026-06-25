@@ -12,13 +12,26 @@ interface Message {
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome-msg',
-      sender: 'ai',
-      text: 'Bonjour ! Je suis votre assistant IA. Je peux analyser les stocks, les dépenses et faire des prévisions. Comment puis-je vous aider ?'
+  
+  // Persist messages in sessionStorage so they survive navigation and toggles
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = sessionStorage.getItem('chatHistory');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Erreur de parsing de l'historique chat", e);
+      }
     }
-  ]);
+    return [
+      {
+        id: 'welcome-msg',
+        sender: 'ai',
+        text: 'Bonjour ! Je suis votre assistant IA. Je peux analyser les stocks, les dépenses et faire des prévisions. Comment puis-je vous aider ?'
+      }
+    ];
+  });
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -28,8 +41,9 @@ export const Chatbot: React.FC = () => {
   };
 
   useEffect(() => {
+    sessionStorage.setItem('chatHistory', JSON.stringify(messages));
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, isOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
