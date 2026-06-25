@@ -10,11 +10,15 @@ export class AiService {
       throw new Error("La clé API Gemini (GEMINI_API_KEY) n'est pas configurée sur le serveur.");
     }
 
-    try {
-      // Use the model explicitly requested by the user's curl
-      const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const modelsToTry = [
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-1.0-pro',
+      'gemini-pro',
+      'gemini-flash-latest'
+    ];
 
-      const prompt = `
+    const prompt = `
 Tu es un assistant IA professionnel spécialisé dans la gestion des fournitures bureautiques.
 Ton rôle est d'analyser les données de l'entreprise (achats, stocks, demandes) et de répondre aux questions de l'utilisateur.
 Tu dois répondre poliment, de manière claire, concise et aller droit au but. Utilise du Markdown pour formater ta réponse (gras, listes).
@@ -30,16 +34,32 @@ ${message}
 RÉPONSE :
 `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
-    } catch (error: any) {
-      console.error('Erreur IA principale:', error);
-      if (error.message && error.message.includes('503')) {
-        throw new Error("Les serveurs de Google (Gemini) sont actuellement surchargés. Veuillez réessayer dans quelques instants.");
+    let lastError: any = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Tentative avec le modèle Gemini: ${modelName}...`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        console.log(`Succès avec le modèle: ${modelName}`);
+        return response.text();
+      } catch (error: any) {
+        console.warn(`Échec avec le modèle ${modelName}:`, error.message);
+        lastError = error;
+        // Si c'est une erreur 400 (Bad Request - prompt trop long ou invalide), on ne continue pas
+        if (error.status === 400) {
+           break;
+        }
+        // Sinon (404, 503, etc.), on essaie le modèle suivant
       }
-      throw new Error(`Erreur lors de la communication avec l'API Gemini: ${error.message}`);
     }
+
+    console.error('Erreur IA principale (Tous les modèles ont échoué):', lastError);
+    if (lastError?.message?.includes('503')) {
+      throw new Error("Les serveurs de Google (Gemini) sont actuellement surchargés pour tous les modèles disponibles. Veuillez réessayer dans quelques instants.");
+    }
+    throw new Error(`Erreur lors de la communication avec l'API Gemini après plusieurs tentatives: ${lastError?.message}`);
   }
 }
 
