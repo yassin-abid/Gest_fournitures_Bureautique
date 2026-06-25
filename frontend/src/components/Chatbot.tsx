@@ -49,14 +49,6 @@ export const Chatbot: React.FC = () => {
     if (!input.trim() || isLoading) return;
 
     const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: input.trim() };
-    
-    // Sauvegarde immédiate du message utilisateur dans la session
-    const currentHistoryStr = sessionStorage.getItem('chatHistory');
-    let currentHistory = currentHistoryStr ? JSON.parse(currentHistoryStr) : [];
-    
-    // On n'ajoute pas le message utilisateur si on l'a déjà fait via l'état React pour éviter les doublons 
-    // mais ici on a besoin que le sessionStorage soit à jour de suite.
-    // En fait, React va le faire avec le setMessages et useEffect.
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
