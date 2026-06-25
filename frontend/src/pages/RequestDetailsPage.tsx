@@ -67,7 +67,7 @@ export const RequestDetailsPage: React.FC = () => {
       ),
     },
     ...(user?.role === 'responsable_achats' || user?.role === 'gestionnaire_stock' || user?.role === 'admin' ? [{
-      key: 'stock' as const,
+      key: 'id' as any,
       label: 'Stock Actuel',
       sortable: false,
       render: (_: any, row: any) => {

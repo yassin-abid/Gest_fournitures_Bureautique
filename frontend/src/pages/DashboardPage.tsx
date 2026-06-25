@@ -119,13 +119,13 @@ const GestionnaireStockDashboard: React.FC = () => {
 
         const formattedStock = stockRes.data.map(item => {
           let status = 'normal';
-          if (item.quantity <= 0) status = 'critical';
-          else if (item.quantity <= item.minStock) status = 'low';
-          else if (item.quantity > item.minStock * 3) status = 'excess';
+          if (item.currentStock <= 0) status = 'critical';
+          else if (item.currentStock <= item.minStock) status = 'low';
+          else if (item.currentStock > item.minStock * 3) status = 'excess';
 
           return {
-            name: item.articleName,
-            current: item.quantity,
+            name: item.name,
+            current: item.currentStock,
             min: item.minStock,
             max: item.minStock * 4 || 100, // Simulated max if not available
             status
@@ -134,13 +134,14 @@ const GestionnaireStockDashboard: React.FC = () => {
         setStockData(formattedStock);
 
         const formattedMovements = movRes.data.map(mov => {
+          let type = mov.movementType;
           return {
-            icon: mov.type === 'entree' ? 'arrow_upward' : (mov.type === 'sortie' ? 'arrow_downward' : 'build'),
-            color: mov.type === 'entree' ? 'text-emerald-600 bg-emerald-50' : (mov.type === 'sortie' ? 'text-amber-600 bg-amber-50' : 'text-blue-600 bg-blue-50'),
-            article: mov.article?.name || mov.articleName || 'Article inconnu',
-            qty: mov.type === 'entree' ? `+${mov.quantity}` : `-${mov.quantity}`,
+            icon: type === 'in' ? 'arrow_upward' : (type === 'out' ? 'arrow_downward' : 'build'),
+            color: type === 'in' ? 'text-emerald-600 bg-emerald-50' : (type === 'out' ? 'text-amber-600 bg-amber-50' : 'text-blue-600 bg-blue-50'),
+            article: mov.articleName || 'Article inconnu',
+            qty: type === 'in' ? `+${mov.quantity}` : `-${mov.quantity}`,
             ref: mov.reason || 'Mouvement',
-            time: new Date(mov.date).toLocaleString()
+            time: new Date(mov.createdAt).toLocaleString()
           };
         });
         setRecentMovements(formattedMovements);
@@ -505,14 +506,14 @@ const ResponsableServiceDashboard: React.FC = () => {
         const pending = allReqs.filter(r => r.status === 'en_attente');
         setPendingRequests(pending.map(r => ({
           id: `REQ-${r.id.toString().padStart(3, '0')}`,
-          emp: r.user?.name || 'Employé inconnu',
-          items: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} +${r.items.length - 1} autres` : 'Aucun article',
-          date: new Date(r.requestDate).toLocaleDateString(),
+          emp: r.userName || 'Employé inconnu',
+          items: r.items.length > 0 ? `${r.items[0].articleName || 'Article'} ${r.items.length > 1 ? `+${r.items.length - 1} autres` : ''}` : 'Aucun article',
+          date: new Date(r.createdAt).toLocaleDateString(),
           realId: r.id
         })));
 
         // Approved count
-        const approved = allReqs.filter(r => r.status === 'approuvee' || r.status === 'livree');
+        const approved = allReqs.filter(r => r.status === 'approuvée' || r.status === 'livrée');
         setApprovedCount(approved.length);
 
         // Try to fetch team members if permission allows
@@ -522,11 +523,11 @@ const ResponsableServiceDashboard: React.FC = () => {
           if (users.length > 0) {
             setTeamMembers(users.map(u => ({
               id: u.id.toString(),
-              name: u.name,
-              role: u.service?.name || 'Employé',
-              requestsThisMonth: allReqs.filter(r => r.userId === u.id).length,
-              lastRequest: allReqs.find(r => r.userId === u.id)?.status || 'Aucune',
-              avatar: u.name.substring(0, 2).toUpperCase()
+              name: `${u.firstName} ${u.lastName}`,
+              role: u.department || 'Employé',
+              requestsThisMonth: allReqs.filter(r => r.userId.toString() === u.id).length,
+              lastRequest: allReqs.find(r => r.userId.toString() === u.id)?.status || 'Aucune',
+              avatar: (u.firstName?.[0] || '') + (u.lastName?.[0] || '')
             })));
           }
         } catch (e) {
@@ -706,13 +707,13 @@ const EmployeDashboard: React.FC = () => {
         const mapped = res.data.map(r => {
           let statusLabel = 'Soumise';
           let statusColor = 'text-blue-600 bg-blue-50';
-          if (r.status === 'approuvee') {
+          if (r.status === 'approuvée') {
             statusLabel = 'Approuvée ✓';
             statusColor = 'text-emerald-700 bg-emerald-50';
-          } else if (r.status === 'rejetee') {
+          } else if (r.status === 'refusée') {
             statusLabel = 'Refusée ✗';
             statusColor = 'text-red-700 bg-red-50';
-          } else if (r.status === 'livree') {
+          } else if (r.status === 'livrée') {
             statusLabel = 'Livrée ✓';
             statusColor = 'text-purple-700 bg-purple-50';
           }
@@ -720,8 +721,8 @@ const EmployeDashboard: React.FC = () => {
           return {
             id: r.id.toString(),
             number: `REQ-${r.id.toString().padStart(3, '0')}`,
-            label: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} ${r.items.length > 1 ? `+${r.items.length - 1} autres` : ''}` : 'Demande vide',
-            date: new Date(r.requestDate).toLocaleDateString(),
+            label: r.items.length > 0 ? `${r.items[0].articleName || 'Article'} ${r.items.length > 1 ? `+${r.items.length - 1} autres` : ''}` : 'Demande vide',
+            date: new Date(r.createdAt).toLocaleDateString(),
             status: r.status,
             statusLabel,
             statusColor
@@ -738,9 +739,9 @@ const EmployeDashboard: React.FC = () => {
   }, []);
 
   const submittedCount = myRequests.filter(r => r.status === 'en_attente').length;
-  const approvedCount = myRequests.filter(r => r.status === 'approuvee').length;
-  const rejectedCount = myRequests.filter(r => r.status === 'rejetee').length;
-  const deliveredCount = myRequests.filter(r => r.status === 'livree').length;
+  const approvedCount = myRequests.filter(r => r.status === 'approuvée').length;
+  const rejectedCount = myRequests.filter(r => r.status === 'refusée').length;
+  const deliveredCount = myRequests.filter(r => r.status === 'livrée').length;
 
   if (loading) {
     return (
@@ -757,7 +758,7 @@ const EmployeDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">Bienvenue, {user?.name || 'Employé'} !</h2>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Bienvenue, {user?.firstName || 'Employé'} !</h2>
           </div>
           <p className="font-body-md text-body-md text-on-surface-variant">Suivez vos demandes de fournitures et consultez leur évolution.</p>
         </div>
@@ -918,26 +919,26 @@ const ResponsableAchatsDashboard: React.FC = () => {
 
         const mappedReqs = reqRes.data.map(r => ({
           id: `REQ-${r.id.toString().padStart(3, '0')}`,
-          dept: r.service?.name || 'Service Inconnu',
-          items: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} +${r.items.length - 1} autres` : 'Aucun article',
+          dept: r.department || 'Service Inconnu',
+          items: r.items.length > 0 ? `${r.items[0].articleName || 'Article'} ${r.items.length > 1 ? `+${r.items.length - 1} autres` : ''}` : 'Aucun article',
           priority: 'medium', // Default
-          date: new Date(r.requestDate).toLocaleDateString(),
+          date: new Date(r.createdAt).toLocaleDateString(),
           realId: r.id
         }));
         setPendingRequests(mappedReqs);
 
         const mappedOrders = ordRes.data.map(o => {
           let statusLabel = 'En attente';
-          if (o.status === 'expediee') statusLabel = 'Expédiée';
-          else if (o.status === 'livree') statusLabel = 'Livrée';
+          if (o.status === 'expédiée') statusLabel = 'Expédiée';
+          else if (o.status === 'livrée') statusLabel = 'Livrée';
           
           return {
             id: `ORD-${o.id.toString().padStart(3, '0')}`,
-            supplier: o.supplier?.name || 'Fournisseur inconnu',
+            supplier: o.supplierName || 'Fournisseur inconnu',
             total: `${o.totalAmount} TND`,
             status: o.status,
             statusLabel,
-            date: new Date(o.orderDate).toLocaleDateString(),
+            date: new Date(o.createdAt).toLocaleDateString(),
             realId: o.id
           };
         });
@@ -1150,8 +1151,8 @@ const AdminDashboard: React.FC = () => {
     }).catch(console.error);
 
     adminService.getUsers(1, 100).then(res => {
-      setTotalUsers(res.total);
-      setActiveUsers(res.data.filter(u => u.isActive).length);
+      setTotalUsers(res.pagination.total);
+      setActiveUsers(res.data.filter(u => u.status === 'active').length);
     }).catch(console.error);
   }, []);
 
