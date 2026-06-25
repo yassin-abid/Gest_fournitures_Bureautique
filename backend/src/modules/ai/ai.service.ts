@@ -11,6 +11,8 @@ export class AiService {
     }
 
     const modelsToTry = [
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
       'gemini-1.5-flash',
       'gemini-1.5-pro',
       'gemini-1.0-pro',
