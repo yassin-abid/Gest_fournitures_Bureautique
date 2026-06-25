@@ -10,73 +10,84 @@ interface Message {
   text: string;
 }
 
+const CHAT_UPDATE_EVENT = 'chat_update';
+
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Persist messages in sessionStorage so they survive navigation and toggles
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = sessionStorage.getItem('chatHistory');
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Erreur de parsing de l'historique chat", e);
-      }
+      try { return JSON.parse(saved); } catch (e) {}
     }
-    return [
-      {
-        id: 'welcome-msg',
-        sender: 'ai',
-        text: 'Bonjour ! Je suis votre assistant IA. Je peux analyser les stocks, les dépenses et faire des prévisions. Comment puis-je vous aider ?'
-      }
-    ];
+    return [{
+      id: 'welcome-msg',
+      sender: 'ai',
+      text: 'Bonjour ! Je suis votre assistant IA. Je peux analyser les stocks, les dépenses et faire des prévisions. Comment puis-je vous aider ?'
+    }];
   });
 
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(() => sessionStorage.getItem('isChatLoading') === 'true');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Écouter les mises à jour en arrière-plan (si on a navigué et que l'ancien composant a reçu la réponse)
+  useEffect(() => {
+    const handleUpdate = () => {
+      const saved = sessionStorage.getItem('chatHistory');
+      if (saved) {
+        try { setMessages(JSON.parse(saved)); } catch (e) {}
+      }
+      setIsLoading(sessionStorage.getItem('isChatLoading') === 'true');
+    };
+    window.addEventListener(CHAT_UPDATE_EVENT, handleUpdate);
+    return () => window.removeEventListener(CHAT_UPDATE_EVENT, handleUpdate);
+  }, []);
 
+  // Sync state to session storage when it changes in THIS component
   useEffect(() => {
     sessionStorage.setItem('chatHistory', JSON.stringify(messages));
-    scrollToBottom();
+    sessionStorage.setItem('isChatLoading', isLoading ? 'true' : 'false');
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, isOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMsg: Message = { id: Date.now().toString(), sender: 'user', text: input.trim() };
-
-    setMessages(prev => [...prev, userMsg]);
+    
+    // Update local and session state
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    sessionStorage.setItem('chatHistory', JSON.stringify(newMessages));
+    
     setInput('');
     setIsLoading(true);
+    sessionStorage.setItem('isChatLoading', 'true');
+    window.dispatchEvent(new Event(CHAT_UPDATE_EVENT));
 
     try {
       const response = await aiService.chat(userMsg.text);
       const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: response.data.reply };
       
-      // Update sessionStorage manually to ensure it's saved even if the component is unmounted (user changed page)
-      const latestHistoryStr = sessionStorage.getItem('chatHistory');
-      let latestHistory = latestHistoryStr ? JSON.parse(latestHistoryStr) : [];
+      const latestStr = sessionStorage.getItem('chatHistory');
+      let latestHistory = latestStr ? JSON.parse(latestStr) : newMessages;
       latestHistory.push(aiMsg);
+      
       sessionStorage.setItem('chatHistory', JSON.stringify(latestHistory));
-
-      setMessages(prev => [...prev, aiMsg]);
+      sessionStorage.setItem('isChatLoading', 'false');
+      window.dispatchEvent(new Event(CHAT_UPDATE_EVENT)); // Notifie le composant actuellement monté
     } catch (err: any) {
       console.error(err);
-      const errorMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: "❌ Désolé, je n'ai pas pu joindre le serveur. Veuillez vérifier votre clé API ou votre connexion." };
+      const errorMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: "❌ Désolé, une erreur est survenue." };
       
-      const latestHistoryStr = sessionStorage.getItem('chatHistory');
-      let latestHistory = latestHistoryStr ? JSON.parse(latestHistoryStr) : [];
+      const latestStr = sessionStorage.getItem('chatHistory');
+      let latestHistory = latestStr ? JSON.parse(latestStr) : newMessages;
       latestHistory.push(errorMsg);
+      
       sessionStorage.setItem('chatHistory', JSON.stringify(latestHistory));
-
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
+      sessionStorage.setItem('isChatLoading', 'false');
+      window.dispatchEvent(new Event(CHAT_UPDATE_EVENT));
     }
   };
 
