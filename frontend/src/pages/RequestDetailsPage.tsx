@@ -58,7 +58,7 @@ export const RequestDetailsPage: React.FC = () => {
     },
     {
       key: 'quantity' as const,
-      label: 'Quantité',
+      label: 'Quantité Demandée',
       sortable: false,
       render: (value: number, row: RequestItem) => (
         <span>
@@ -66,6 +66,21 @@ export const RequestDetailsPage: React.FC = () => {
         </span>
       ),
     },
+    ...(user?.role === 'responsable_achats' || user?.role === 'gestionnaire_stock' || user?.role === 'admin' ? [{
+      key: 'stock' as const,
+      label: 'Stock Actuel',
+      sortable: false,
+      render: (_: any, row: any) => {
+        const available = row.article?.quantity || 0;
+        const minStock = row.article?.minStock || 0;
+        const isCritical = available <= minStock && available < row.quantity;
+        return (
+          <span className={`font-semibold px-2 py-1 rounded-md ${isCritical ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+            {available} en stock
+          </span>
+        );
+      }
+    }] : []),
     {
       key: 'notes' as const,
       label: 'Notes',

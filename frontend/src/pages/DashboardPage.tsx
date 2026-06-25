@@ -12,6 +12,10 @@ import { Loader } from '../components/Loader';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@services/authService';
+import { stockService } from '../services/stockService';
+import { requestsService } from '../services/requestsService';
+import { analyticsService } from '../services/analyticsService';
+import { ordersService } from '../services/ordersService';
 
 /* ─────────────────────────────────────────────────────────────
    Shared Components
@@ -91,16 +95,11 @@ const NotificationsPanel: React.FC = () => {
 const GestionnaireStockDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const stockData = [
-    { name: 'Papier A4 (500 feuilles)', current: 450, min: 100, max: 500, status: 'normal' },
-    { name: 'Stylo Bille (Bleu)', current: 75, min: 50, max: 200, status: 'normal' },
-    { name: 'Chemise Classeur (Jaune)', current: 45, min: 80, max: 300, status: 'low' },
-    { name: 'Agrafeuse de Bureau', current: 8, min: 5, max: 30, status: 'critical' },
-    { name: 'Ruban Adhésif (12mm)', current: 520, min: 100, max: 500, status: 'excess' },
-    { name: 'Colle en Bâton', current: 65, min: 80, max: 250, status: 'low' },
-    { name: 'Toner Laser HP 85A', current: 2, min: 10, max: 40, status: 'critical' },
-  ];
+  const [stockData, setStockData] = useState<any[]>([]);
+  const [recentMovements, setRecentMovements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Hardcoded for now as no specific AI endpoint exists for this role's consumption view
   const consumptionData = [
     { month: 'Jan', papeterie: 35, informatique: 20, bureautique: 15 },
     { month: 'Fév', papeterie: 42, informatique: 28, bureautique: 18 },
@@ -109,6 +108,50 @@ const GestionnaireStockDashboard: React.FC = () => {
     { month: 'Mai', papeterie: 70, informatique: 48, bureautique: 35 },
     { month: 'Jun', papeterie: 52, informatique: 32, bureautique: 28 },
   ];
+
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const [stockRes, movRes] = await Promise.all([
+          stockService.getStockStatus(1, 100),
+          stockService.getMovements(1, 5)
+        ]);
+
+        const formattedStock = stockRes.data.map(item => {
+          let status = 'normal';
+          if (item.quantity <= 0) status = 'critical';
+          else if (item.quantity <= item.minStock) status = 'low';
+          else if (item.quantity > item.minStock * 3) status = 'excess';
+
+          return {
+            name: item.articleName,
+            current: item.quantity,
+            min: item.minStock,
+            max: item.minStock * 4 || 100, // Simulated max if not available
+            status
+          };
+        });
+        setStockData(formattedStock);
+
+        const formattedMovements = movRes.data.map(mov => {
+          return {
+            icon: mov.type === 'entree' ? 'arrow_upward' : (mov.type === 'sortie' ? 'arrow_downward' : 'build'),
+            color: mov.type === 'entree' ? 'text-emerald-600 bg-emerald-50' : (mov.type === 'sortie' ? 'text-amber-600 bg-amber-50' : 'text-blue-600 bg-blue-50'),
+            article: mov.article?.name || mov.articleName || 'Article inconnu',
+            qty: mov.type === 'entree' ? `+${mov.quantity}` : `-${mov.quantity}`,
+            ref: mov.reason || 'Mouvement',
+            time: new Date(mov.date).toLocaleString()
+          };
+        });
+        setRecentMovements(formattedMovements);
+      } catch (err) {
+        console.error('Erreur lors du chargement du stock', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStockData();
+  }, []);
 
   const maxConsumption = Math.max(
     ...consumptionData.map((d) => d.papeterie + d.informatique + d.bureautique)
@@ -140,12 +183,13 @@ const GestionnaireStockDashboard: React.FC = () => {
     return 'text-emerald-600';
   };
 
-  const recentMovements = [
-    { icon: 'arrow_upward', color: 'text-emerald-600 bg-emerald-50', article: 'Papier A4 (500 feuilles)', qty: '+100', ref: 'ORD-001', time: "Aujourd'hui 14:30" },
-    { icon: 'arrow_downward', color: 'text-amber-600 bg-amber-50', article: 'Stylo Bille (Bleu)', qty: '-25', ref: 'REQ-001', time: "Aujourd'hui 11:15" },
-    { icon: 'build', color: 'text-blue-600 bg-blue-50', article: 'Chemise Classeur', qty: '-5', ref: 'INV-001', time: 'Hier 16:45' },
-    { icon: 'arrow_upward', color: 'text-emerald-600 bg-emerald-50', article: 'Agrafeuse de Bureau', qty: '+10', ref: 'ORD-002', time: 'Hier 10:20' },
-  ];
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center py-20"><Loader size="lg" /></div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -442,16 +486,70 @@ const GestionnaireStockDashboard: React.FC = () => {
 const ResponsableServiceDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const pendingRequests = [
-    { id: 'REQ-006', emp: 'Amira Belaid', items: 'Classeurs rigides', date: 'Aujourd\'hui' },
-    { id: 'REQ-007', emp: 'Sami Haddad', items: 'Cartouches d\'encre (x2)', date: 'Hier' },
-  ];
-
-  const teamMembers = [
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [teamMembers, setTeamMembers] = useState<any[]>([
     { id: 'emp1', name: 'Amira Belaid', role: 'Chargée RH', requestsThisMonth: 3, lastRequest: 'En attente', avatar: 'AB' },
     { id: 'emp2', name: 'Sami Haddad', role: 'Recruteur', requestsThisMonth: 1, lastRequest: 'Approuvée', avatar: 'SH' },
     { id: 'emp3', name: 'Nadia Mansour', role: 'Assistante', requestsThisMonth: 5, lastRequest: 'Livrée', avatar: 'NM' },
-  ];
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        const reqRes = await requestsService.getRequests(1, 100);
+        const allReqs = reqRes.data;
+
+        // Pending requests
+        const pending = allReqs.filter(r => r.status === 'en_attente');
+        setPendingRequests(pending.map(r => ({
+          id: `REQ-${r.id.toString().padStart(3, '0')}`,
+          emp: r.user?.name || 'Employé inconnu',
+          items: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} +${r.items.length - 1} autres` : 'Aucun article',
+          date: new Date(r.requestDate).toLocaleDateString(),
+          realId: r.id
+        })));
+
+        // Approved count
+        const approved = allReqs.filter(r => r.status === 'approuvee' || r.status === 'livree');
+        setApprovedCount(approved.length);
+
+        // Try to fetch team members if permission allows
+        try {
+          const userRes = await adminService.getUsers(1, 50);
+          const users = userRes.data.filter(u => u.role === 'employe'); // Filter by own service if possible
+          if (users.length > 0) {
+            setTeamMembers(users.map(u => ({
+              id: u.id.toString(),
+              name: u.name,
+              role: u.service?.name || 'Employé',
+              requestsThisMonth: allReqs.filter(r => r.userId === u.id).length,
+              lastRequest: allReqs.find(r => r.userId === u.id)?.status || 'Aucune',
+              avatar: u.name.substring(0, 2).toUpperCase()
+            })));
+          }
+        } catch (e) {
+          // If 403, fallback to mocked teamMembers
+          console.log('Utilisation des membres de l\'équipe simulés');
+        }
+
+      } catch (err) {
+        console.error('Failed to load dashboard data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center py-20"><Loader size="lg" /></div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -491,7 +589,7 @@ const ResponsableServiceDashboard: React.FC = () => {
             <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-widest">Approuvées (Mois)</p>
             <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
           </div>
-          <h3 className="text-4xl font-bold text-emerald-600">14</h3>
+          <h3 className="text-4xl font-bold text-emerald-600">{approvedCount}</h3>
           <p className="text-xs text-on-surface-variant mt-1">Transmises aux Achats</p>
         </div>
         <div className="bg-surface border border-outline-variant rounded-xl p-5 soft-shadow relative overflow-hidden">
@@ -598,20 +696,59 @@ const EmployeDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const myRequests = [
-    { id: 'req-001', number: 'REQ-001', label: 'Papier A4 (x10 Rames)', date: '2024-06-10', status: 'submitted', statusLabel: 'Soumise', statusColor: 'text-blue-600 bg-blue-50' },
-    { id: 'req-002', number: 'REQ-002', label: 'Stylos Bille Bleu (x50)', date: '2024-06-08', status: 'approved', statusLabel: 'Approuvée ✓', statusColor: 'text-emerald-700 bg-emerald-50' },
-    { id: 'req-003', number: 'REQ-003', label: 'Ruban adhésif (x5)', date: '2024-06-05', status: 'rejected', statusLabel: 'Refusée ✗', statusColor: 'text-red-700 bg-red-50' },
-    { id: 'req-004', number: 'REQ-004', label: 'Agrafeuse de bureau (x2)', date: '2024-05-28', status: 'delivered', statusLabel: 'Livrée ✓', statusColor: 'text-purple-700 bg-purple-50' },
-  ];
+  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const submittedCount = myRequests.filter(r => r.status === 'submitted').length;
-  const approvedCount = myRequests.filter(r => r.status === 'approved').length;
-  const rejectedCount = myRequests.filter(r => r.status === 'rejected').length;
-  const deliveredCount = myRequests.filter(r => r.status === 'delivered').length;
+  useEffect(() => {
+    const fetchMyRequests = async () => {
+      try {
+        const res = await requestsService.getRequests(1, 20); // Gets my requests
+        const mapped = res.data.map(r => {
+          let statusLabel = 'Soumise';
+          let statusColor = 'text-blue-600 bg-blue-50';
+          if (r.status === 'approuvee') {
+            statusLabel = 'Approuvée ✓';
+            statusColor = 'text-emerald-700 bg-emerald-50';
+          } else if (r.status === 'rejetee') {
+            statusLabel = 'Refusée ✗';
+            statusColor = 'text-red-700 bg-red-50';
+          } else if (r.status === 'livree') {
+            statusLabel = 'Livrée ✓';
+            statusColor = 'text-purple-700 bg-purple-50';
+          }
 
-  // unreadNotifs is handled inside NotificationsPanel, so we no longer display the banner here
-  // to avoid duplication and state management here.
+          return {
+            id: r.id.toString(),
+            number: `REQ-${r.id.toString().padStart(3, '0')}`,
+            label: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} ${r.items.length > 1 ? `+${r.items.length - 1} autres` : ''}` : 'Demande vide',
+            date: new Date(r.requestDate).toLocaleDateString(),
+            status: r.status,
+            statusLabel,
+            statusColor
+          };
+        });
+        setMyRequests(mapped);
+      } catch (err) {
+        console.error('Erreur lors du chargement des demandes', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMyRequests();
+  }, []);
+
+  const submittedCount = myRequests.filter(r => r.status === 'en_attente').length;
+  const approvedCount = myRequests.filter(r => r.status === 'approuvee').length;
+  const rejectedCount = myRequests.filter(r => r.status === 'rejetee').length;
+  const deliveredCount = myRequests.filter(r => r.status === 'livree').length;
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center py-20"><Loader size="lg" /></div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -620,7 +757,7 @@ const EmployeDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-            <h2 className="font-headline-lg text-headline-lg text-on-surface">Bienvenue, {user?.firstName} !</h2>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">Bienvenue, {user?.name || 'Employé'} !</h2>
           </div>
           <p className="font-body-md text-body-md text-on-surface-variant">Suivez vos demandes de fournitures et consultez leur évolution.</p>
         </div>
@@ -765,17 +902,69 @@ const EmployeDashboard: React.FC = () => {
 const ResponsableAchatsDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const pendingRequests = [
-    { id: 'REQ-010', dept: 'Ressources Humaines', items: 'Fournitures de bureau standard', priority: 'high', date: 'Aujourd\'hui' },
-    { id: 'REQ-011', dept: 'Informatique', items: 'Écrans PC (x5)', priority: 'urgent', date: 'Hier' },
-    { id: 'REQ-012', dept: 'Commercial', items: 'Cartouches d\'encre', priority: 'medium', date: 'Hier' },
-  ];
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [budgetDepense, setBudgetDepense] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const activeOrders = [
-    { id: 'ORD-042', supplier: 'Lyreco', total: '1,250 TND', status: 'pending', statusLabel: 'En attente', date: 'Aujourd\'hui' },
-    { id: 'ORD-041', supplier: 'OfficePlus', total: '450 TND', status: 'shipped', statusLabel: 'Expédiée', date: '12 Juin' },
-    { id: 'ORD-040', supplier: 'TechMarket', total: '3,200 TND', status: 'delivered', statusLabel: 'Livrée', date: '10 Juin' },
-  ];
+  useEffect(() => {
+    const fetchAchatsData = async () => {
+      try {
+        const [reqRes, ordRes, analyticsRes] = await Promise.all([
+          requestsService.getRequests(1, 10, 'approuvee'),
+          ordersService.getOrders(1, 10),
+          analyticsService.getDashboardData('year')
+        ]);
+
+        const mappedReqs = reqRes.data.map(r => ({
+          id: `REQ-${r.id.toString().padStart(3, '0')}`,
+          dept: r.service?.name || 'Service Inconnu',
+          items: r.items.length > 0 ? `${r.items[0].article?.name || 'Article'} +${r.items.length - 1} autres` : 'Aucun article',
+          priority: 'medium', // Default
+          date: new Date(r.requestDate).toLocaleDateString(),
+          realId: r.id
+        }));
+        setPendingRequests(mappedReqs);
+
+        const mappedOrders = ordRes.data.map(o => {
+          let statusLabel = 'En attente';
+          if (o.status === 'expediee') statusLabel = 'Expédiée';
+          else if (o.status === 'livree') statusLabel = 'Livrée';
+          
+          return {
+            id: `ORD-${o.id.toString().padStart(3, '0')}`,
+            supplier: o.supplier?.name || 'Fournisseur inconnu',
+            total: `${o.totalAmount} TND`,
+            status: o.status,
+            statusLabel,
+            date: new Date(o.orderDate).toLocaleDateString(),
+            realId: o.id
+          };
+        });
+        setActiveOrders(mappedOrders);
+
+        // Calculate budget from analytics monthlyData (current month)
+        const currentMonthData = analyticsRes.data.monthlyData[analyticsRes.data.monthlyData.length - 1];
+        if (currentMonthData) {
+          setBudgetDepense(currentMonthData.amount);
+        }
+
+      } catch (err) {
+        console.error('Error fetching achats dashboard data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAchatsData();
+  }, []);
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center py-20"><Loader size="lg" /></div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -816,7 +1005,7 @@ const ResponsableAchatsDashboard: React.FC = () => {
             <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Commandes en cours</p>
             <span className="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
           </div>
-          <h3 className="text-4xl font-bold text-blue-700">12</h3>
+          <h3 className="text-4xl font-bold text-blue-700">{activeOrders.length}</h3>
           <p className="text-xs text-on-surface-variant mt-1">Chez les fournisseurs</p>
         </div>
 
@@ -826,7 +1015,7 @@ const ResponsableAchatsDashboard: React.FC = () => {
             <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Budget Dépensé (Mois)</p>
             <span className="material-symbols-outlined text-emerald-600 bg-emerald-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance_wallet</span>
           </div>
-          <h3 className="text-4xl font-bold text-emerald-700">14.5k<span className="text-lg text-emerald-600/70 ml-1">TND</span></h3>
+          <h3 className="text-4xl font-bold text-emerald-700">{budgetDepense}<span className="text-lg text-emerald-600/70 ml-1">TND</span></h3>
           <p className="text-xs text-on-surface-variant mt-1">+5% par rapport au mois dernier</p>
         </div>
 
@@ -929,6 +1118,8 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(0);
 
   useEffect(() => {
     adminService.getAuditLogs(1, 4).then(res => {
@@ -956,6 +1147,11 @@ const AdminDashboard: React.FC = () => {
         };
       });
       setRecentLogs(formatted);
+    }).catch(console.error);
+
+    adminService.getUsers(1, 100).then(res => {
+      setTotalUsers(res.total);
+      setActiveUsers(res.data.filter(u => u.isActive).length);
     }).catch(console.error);
   }, []);
 
@@ -988,8 +1184,8 @@ const AdminDashboard: React.FC = () => {
             <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Utilisateurs Actifs</p>
             <span className="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded-lg text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>group</span>
           </div>
-          <h3 className="text-4xl font-bold text-blue-700">45</h3>
-          <p className="text-xs text-on-surface-variant mt-1">Sur 48 comptes totaux</p>
+          <h3 className="text-4xl font-bold text-blue-700">{activeUsers}</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Sur {totalUsers} comptes totaux</p>
         </div>
 
         <div className="bg-surface border border-emerald-200 rounded-xl p-5 soft-shadow relative overflow-hidden">

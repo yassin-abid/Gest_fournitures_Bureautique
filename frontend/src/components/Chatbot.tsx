@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Brain, Loader2 } from 'lucide-react';
+import { X, Send, Brain, Loader2, Trash2 } from 'lucide-react';
 import { aiService } from '@services/aiService';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
@@ -97,6 +97,17 @@ export const Chatbot: React.FC = () => {
     return { __html: DOMPurify.sanitize(rawMarkup) };
   };
 
+  const handleClearChat = () => {
+    const welcomeMsg: Message = {
+      id: 'welcome-msg',
+      sender: 'ai',
+      text: 'Bonjour ! Je suis votre assistant IA. Je peux analyser les stocks, les dépenses et faire des prévisions. Comment puis-je vous aider ?'
+    };
+    setMessages([welcomeMsg]);
+    sessionStorage.removeItem('chatHistory');
+    window.dispatchEvent(new Event(CHAT_UPDATE_EVENT));
+  };
+
   return (
     <>
       {/* Floating Button */}
@@ -125,9 +136,14 @@ export const Chatbot: React.FC = () => {
                 <p className="text-[10px] text-primary-100">Analyse de base de données</p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white hover:text-neutral-200 transition-colors">
-              <X size={20} />
-            </button>
+            <div className="flex gap-2">
+              <button onClick={handleClearChat} className="text-white hover:text-red-300 transition-colors" title="Effacer l'historique">
+                <Trash2 size={18} />
+              </button>
+              <button onClick={() => setIsOpen(false)} className="text-white hover:text-neutral-200 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}
