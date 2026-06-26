@@ -216,6 +216,70 @@ async function main() {
     }
   });
 
+  // 12. Audit Logs (for Admin Dashboard)
+  console.log('📝 Generating audit logs...');
+  const actions = ['CONNEXION', 'CREATION_UTILISATEUR', 'MAJ_STOCK', 'APPROBATION_DEMANDE', 'CREATION_COMMANDE', 'GENERATION_RAPPORT'];
+  for (let i = 0; i < 30; i++) {
+    const logDate = randomDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), now); // last 7 days
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const u = [admin, respService, gestStock, respAchats, employe][Math.floor(Math.random() * 5)];
+    await prisma.auditLog.create({
+      data: {
+        userId: u.id,
+        action: action,
+        details: `L'action ${action} a été exécutée avec succès par ${u.firstName}`,
+        ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        timestamp: logDate,
+      }
+    });
+  }
+
+  // 13. Stock Movements (for Gestionnaire Stock Dashboard)
+  console.log('📦 Generating stock movements...');
+  const movementTypes = ['ENTREE', 'SORTIE', 'AJUSTEMENT'];
+  for (let i = 0; i < 40; i++) {
+    const movDate = randomDate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), now); // last 30 days
+    const art = articles[Math.floor(Math.random() * articles.length)];
+    const type = movementTypes[Math.floor(Math.random() * movementTypes.length)];
+    const qty = Math.floor(Math.random() * 20) + 1;
+    
+    await prisma.stockMovement.create({
+      data: {
+        articleId: art.id,
+        userId: gestStock.id,
+        type: type,
+        quantity: qty,
+        previousStock: art.quantity || 0,
+        newStock: type === 'ENTREE' ? (art.quantity || 0) + qty : Math.max(0, (art.quantity || 0) - qty),
+        reason: type === 'ENTREE' ? 'Réception commande' : (type === 'SORTIE' ? 'Distribution service' : 'Inventaire'),
+        reference: `MOV-${movDate.getTime().toString().slice(-6)}`,
+        date: movDate,
+      }
+    });
+  }
+
+  // 14. Pending Requests (for Responsable Service Dashboard)
+  console.log('⏳ Generating pending requests...');
+  for (let i = 0; i < 5; i++) {
+    const reqDate = randomDate(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), now); // last 3 days
+    await prisma.supplyRequest.create({
+      data: {
+        requestNumber: `REQ-PEND-${reqDate.getFullYear()}-${Math.floor(Math.random() * 9000) + 1000}`,
+        requesterId: employe.id,
+        serviceId: srvCom.id,
+        requestDate: reqDate,
+        status: 'en_attente',
+        priority: Math.random() > 0.8 ? 'urgente' : 'normale',
+        items: {
+          create: [
+            { articleId: articles[1].id, quantity: Math.floor(Math.random() * 5) + 1 },
+            { articleId: articles[2].id, quantity: Math.floor(Math.random() * 3) + 1 }
+          ]
+        }
+      }
+    });
+  }
+
   console.log('✅ Rich Database Seeding completed successfully!');
 }
 

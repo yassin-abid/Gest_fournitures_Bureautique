@@ -282,7 +282,7 @@ export const CreateOrderPage: React.FC = () => {
                   label="Article *"
                   options={[
                     { value: '', label: 'Sélectionner un article' },
-                    ...articles.map(a => ({ value: a.id.toString(), label: a.name }))
+                    ...articles.map(a => ({ value: a.id.toString(), label: `${a.name} - ${(a.unitPrice || 0).toFixed(2)} TND` }))
                   ]}
                   value={newItemArticle}
                   onChange={handleArticleSelect}
@@ -299,7 +299,7 @@ export const CreateOrderPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Prix unitaire (€) *"
+                  label="Prix unitaire (TND) *"
                   type="number"
                   step="0.01"
                   value={newItemPrice}
@@ -352,8 +352,8 @@ export const CreateOrderPage: React.FC = () => {
                             className="w-20 px-2 py-1 border border-neutral-300 rounded text-sm focus:ring-primary-500 focus:border-primary-500"
                           />
                         </div>
-                        <span>Prix unitaire : {item.unitPrice.toFixed(2)} DT</span>
-                        <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} DT</span>
+                        <span>Prix unitaire : {item.unitPrice.toFixed(2)} TND</span>
+                        <span className="font-semibold text-neutral-900">Total : {item.totalPrice.toFixed(2)} TND</span>
                         {item.notes && <span className="italic">"{item.notes}"</span>}
                       </div>
                     </div>
@@ -365,7 +365,7 @@ export const CreateOrderPage: React.FC = () => {
               <div className="border-t border-neutral-200 mt-4 pt-4">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-neutral-900">Montant Total :</span>
-                  <span className="text-2xl font-bold text-primary-600">{totalAmount.toFixed(2)} DT</span>
+                  <span className="text-2xl font-bold text-primary-600">{totalAmount.toFixed(2)} TND</span>
                 </div>
               </div>
             </CardBody>

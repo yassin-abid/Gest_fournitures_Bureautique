@@ -127,7 +127,7 @@ model Inventaire {
   dateInventaire DateTime? @default(now()) @map("date_inventaire") @db.Timestamp(6)
   stockTheorique Int       @map("stock_theorique")
   stockReel      Int       @map("stock_reel")
-  ecart          Int?      @default(dbgenerated("(stock_reel - stock_theorique)"))
+  ecart          Int?      
   commentaire    String?
   article        Article   @relation(fields: [articleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   user           User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)

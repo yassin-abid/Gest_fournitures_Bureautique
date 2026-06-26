@@ -1,0 +1,396 @@
+GROUPE HAMMEMI
+Comptoirs Hammemi — Sfax
+CAHIER DES CHARGES
+Application Web de
+Gestion des Fournitures Bureautiques
+Projet de Fin de Stage
+Table des matières
+1. Présentation générale du projet
+1.1 Présentation de l’entreprise
+Comptoirs Hammemi, filiale du Groupe Hammemi, est une entreprise spécialisée dans le commerce de matériaux de construction et produits associés à Sfax. Dans le cadre de sa diversification ou de la gestion interne/revendeurs, l’entreprise souhaite développer une solution digitale dédiée à la gestion des fournitures bureautiques (papeterie, consommables informatiques, mobilier léger, produits d’entretien, etc.).
+1.2 Contexte du projet
+Dans le cadre de la politique de modernisation et de digitalisation portée par le Groupe Hammemi, la direction de Comptoirs Hammemi a décidé d'initier un projet de transformation numérique de ses processus internes. La gestion des fournitures bureautiques a été identifiée comme un axe prioritaire d'amélioration, en raison des inefficacités constatées dans les pratiques actuelles.
+Ce projet s'inscrit également dans un contexte de stage académique. Il constitue le projet de fin de stage de deux étudiants en développement informatique, encadrés par la direction de l'entreprise. L'enjeu est double : apporter une solution concrète et opérationnelle à l'entreprise, tout en permettant aux stagiaires de mettre en pratique leurs compétences techniques dans un environnement professionnel réel.
+1.3 Problématique
+La question centrale à laquelle ce projet doit répondre est la suivante :
+En l'absence d'un système d'information dédié, l'entreprise fait face à des problèmes récurrents : manque de visibilité sur les stocks disponibles, impossibilité de tracer les consommations par service, délais excessifs dans le traitement des demandes, et risques d'erreurs dans les commandes passées aux fournisseurs.
+1.3 Objectifs du projet
+1.3.1 Objectif principal
+Développer une application web complète permettant de digitaliser l'intégralité du processus de gestion des fournitures bureautiques, depuis la demande d'un employé jusqu'à la réception de la commande fournisseur, en passant par le suivi des stocks en temps réel.
+1.3.2 Objectifs spécifiques
+Centraliser l'information : disposer d'une base de données unique et fiable pour tous les articles, stocks et mouvements
+Automatiser les processus : remplacer les échanges manuels (papier, e-mail informel) par des workflows numériques structurés
+Améliorer la traçabilité : enregistrer chaque action avec son auteur, sa date et son motif
+Réduire les ruptures de stock : mettre en place des alertes automatiques et des suggestions de réapprovisionnement
+Faciliter le reporting : générer des tableaux de bord et des rapports exportables pour la direction
+Sécuriser les accès : contrôler les droits de chaque utilisateur selon son rôle dans l'entreprise
+1.4 Périmètre du projet
+▸  Inclus dans le périmètre
+Gestion du catalogue des fournitures (articles, catégories, fournisseurs)
+Gestion des stocks (entrées, sorties, alertes de seuil)
+Gestion des demandes internes par les employés
+Workflow de validation et de traitement des demandes
+Gestion des bons de commande fournisseurs
+Tableau de bord et reporting
+Gestion des utilisateurs et des droits d'accès
+Notifications et alertes automatiques
+▸  Exclus du périmètre
+Gestion comptable et financière (facturation, comptabilité générale)
+Gestion des ventes aux clients externes
+Gestion des ressources humaines (paie, congés, etc.)
+Application mobile native
+Intégration avec des systèmes ERP existants (hors du projet actuel)
+2. Analyse de l’existant
+2.1  Méthode actuelle de travail
+À ce jour, la gestion des fournitures bureautiques au sein de Comptoirs Hammemi repose sur des pratiques manuelles et non standardisées. L'analyse de l'existant révèle trois méthodes coexistantes selon les services :
+Ces méthodes fonctionnent de manière indépendante, sans synchronisation entre elles, ce qui crée une fragmentation de l'information et une absence totale de vue unifiée sur l'état des stocks.
+2.2  Limites de l'existant
+▸  Erreurs fréquentes
+Saisies en double ou contradictoires entre le registre papier et le tableur Excel
+Calculs manuels erronés dans les feuilles de calcul (quantités, totaux)
+Articles mal référencés ou confondus faute de codification unique
+Commandes passées en doublon car les informations ne sont pas partagées en temps réel
+▸  Temps perdu
+Recherche de l'état d'une demande nécessite d'interroger plusieurs personnes
+Consolidation mensuelle des consommations prend plusieurs heures de travail manuel
+Vérification manuelle du stock avant chaque commande chronophage et imprécise
+Gestion des relances fournisseurs entièrement manuelle
+▸  Difficultés de suivi
+Impossible de savoir quel service consomme quelles fournitures et en quelle quantité
+Aucune visibilité sur l'historique d'une demande (qui l'a faite, quand, quelle suite)
+Suivi des livraisons partielles inexistant
+Aucun tableau de bord permettant une vue synthétique pour la direction
+▸  Manque de traçabilité
+Sorties de stock sans identification de l'émetteur ni du service bénéficiaire
+Modifications du tableur sans journal des changements
+Impossible de reconstituer l'historique complet d'un article ou d'une commande
+Aucune piste d'audit en cas de litige ou d'anomalie
+2.3  Besoin d'amélioration
+Face à ces dysfonctionnements, l'entreprise exprime un besoin clair de modernisation. Les axes d'amélioration attendus sont les suivants :
+3. Expression des besoins
+3.1  Besoins fonctionnels
+Les besoins fonctionnels décrivent ce que l'application doit être capable de faire. Ils ont été recueillis lors d'entretiens avec les différents acteurs de l'entreprise.
+3.2  Besoins non fonctionnels
+▸  Sécurité
+Authentification par identifiant/mot de passe avec hachage sécurisé (bcrypt)
+Contrôle d'accès basé sur les rôles (RBAC) : chaque utilisateur n'accède qu'aux fonctionnalités autorisées
+Protection contre les injections SQL, les attaques XSS et CSRF
+Journalisation des actions sensibles (connexion, modification, suppression)
+Communication chiffrée en HTTPS en environnement de production
+▸  Performance
+Temps de chargement des pages inférieur à 2 secondes sur réseau local
+Support de 20 utilisateurs simultanés minimum sans dégradation
+Pagination des listes longues (max. 25 éléments par page)
+Optimisation des requêtes SQL (index sur les clés étrangères)
+▸  Ergonomie
+Interface intuitive, accessible sans formation préalable approfondie
+Navigation claire avec menu latéral, fil d'Ariane et raccourcis
+Messages d'erreur explicites et retours visuels immédiats
+Indicateurs visuels de statut (couleurs : vert/orange/rouge/bleu)
+▸  Disponibilité
+L'application doit être disponible pendant les heures de travail (8h–18h, du lundi au Samedi)
+Temps d'indisponibilité planifiée inférieur à 2h par semaine
+▸  Compatibilité
+Navigateurs supportés : Chrome 90+, Firefox 88+, Edge 90+, Safari 14+
+Interface responsive, adaptée aux écrans desktop et tablette
+Aucune installation client requise — 100% accessible via navigateur
+4. Intervenants et parties prenantes
+Le système identifie quatre profils d'acteurs distincts, chacun disposant de droits et responsabilités spécifiques.
+4.1  Administrateur
+4.2  Responsable de service / Responsable des achats
+4.3  Gestionnaire de stock
+4.4  Employé
+5. Spécifications fonctionnelles
+5.1 Module 1 — Authentification et gestion des utilisateurs
+5.1.1 Authentification
+Connexion sécurisée par identifiant et mot de passe
+Réinitialisation du mot de passe par email
+Protection contre les attaques par force brute (blocage après X tentatives)
+5.1.2 Gestion des comptes
+Création, modification et désactivation des comptes utilisateurs
+Attribution et modification des rôles
+Rattachement des utilisateurs à un département/service
+Journal des connexions et des actions sensibles
+5.2 Module 2 — Gestion du catalogue des fournitures
+5.2.1 Gestion des articles
+Ajout, modification et suppression d'articles
+Champs : référence interne, désignation, description, catégorie, unité de mesure, image
+Définition du seuil d'alerte (stock minimum) par article
+Recherche et filtrage avancés (par catégorie, référence, désignation)
+5.2.2 Gestion des catégories
+Création d'une arborescence de catégories (ex : Papeterie > Stylos)
+Association d'articles aux catégories
+Gestion des fournisseurs
+Fiche fournisseur : Id , nom , contact , email ,telephone , adresse , date_creation
+Association d'articles à des fournisseurs préférentiels
+Historique des commandes par fournisseur
+5.3 Module 3 — Gestion des stocks
+5.3.1 État du stock
+Affichage en temps réel des quantités disponibles par article
+Indicateurs visuels : stock normal (vert), faible (orange), rupture (rouge)
+Filtrage par catégorie, état du stock, emplacement
+5.3.2 Mouvements de stock
+Enregistrement des entrées de stock (réception de commandes)
+Enregistrement des sorties de stock (satisfaction des demandes)
+Ajustements manuels avec justification obligatoire
+Historique complet et traçable de tous les mouvements
+5.3.3 Système d'alertes
+Alerte automatique en cas de dépassement du seuil d'alerte
+Notification par email et/ou notification in-app aux gestionnaires
+Tableau récapitulatif des articles en alerte
+5.4 Module 4 — Gestion des demandes internes
+5.4.1 Création d'une demande
+Formulaire de demande : article, quantité souhaitée, justification, urgence
+Possibilité de demander plusieurs articles dans une même demande
+Soumission et confirmation par passage admin
+5.4.2 Workflow de validation
+Le circuit de validation se déroule en deux étapes :
+Validation par le responsable de service (approbation ou rejet avec commentaire)
+Traitement par le responsable d’achats 
+Notification automatique à chaque étape du workflow
+5.4.3 Suivi des demandes
+Tableau de bord personnel : liste de ses demandes avec statuts
+Statuts : Brouillon, Soumise, En cours de validation, Approuvée, Rejetée, Traitée
+Historique des demandes avec filtres (date, statut, demandeur)
+5.5 Module 5 — Gestion des commandes fournisseurs
+5.5.1 Création d'un bon de commande
+Génération automatique suggérée pour les articles en rupture ou en alerte
+Création manuelle : sélection du fournisseur, articles, quantités, conditions
+Attribution d'un numéro de commande unique et auto-incrémenté
+5.5.2 Suivi des commandes
+Statuts : Brouillon, Envoyée, En attente de livraison, Partiellement reçue
+Enregistrement des livraisons 
+Mise à jour automatique du stock à la réception
+5.5.3 Génération des documents
+Export du bon de commande au format PDF
+Impression directe depuis l'application
+5.6 Module 6 — Tableau de bord et rapports
+5.6.1 Tableau de bord
+Vue synthétique : articles en alerte, demandes en attente, commandes en cours
+Indicateurs clés (KPIs) : valeur du stock, taux de satisfaction des demandes
+Graphiques d'évolution des consommations (mensuel/annuel)
+5.6.2 Rapports
+Rapport d'inventaire (stock à une date donnée)
+Rapport de consommation par article, catégorie ou département
+Rapport des commandes fournisseurs sur une période
+Export des rapports en PDF et Excel
+6. Contraintes du projet
+6.1  Contraintes techniques
+▸  Langages et frameworks
+L'application doit être développée avec des technologies web standard, open source et documentées
+Le backend doit exposer une API RESTful consommée par le frontend
+Le code source doit être versionné sur Git (GitHub ou GitLab)
+▸  Base de données
+Utilisation d'un SGBD relationnel 
+Modèle de données normalisé (minimum 3NF) pour éviter les redondances
+Scripts SQL de création et d'initialisation inclus dans les livrables
+▸  Matériel
+Aucun logiciel spécifique ne doit être requis côté client — accès uniquement via navigateur
+6.2  Contraintes organisationnelles
+▸  Délais
+La durée du stage est limitée — le périmètre fonctionnel défini dans ce document doit être livré dans les délais
+Les fonctionnalités sont priorisées selon la méthode MoSCoW : Must have / Should have / Could have
+▸  Ressources disponibles
+L'équipe de développement est composée de 2 stagiaires avec des compétences complémentaires
+La disponibilité des utilisateurs métier pour les tests et validations est limitée
+Aucun budget matériel supplémentaire n'est prévu pour ce projet
+6.3  Contraintes réglementaires
+▸  Protection des données
+Les données personnelles des utilisateurs (noms, emails) doivent être traitées conformément aux bonnes pratiques de protection de la vie privée
+Les mots de passe ne doivent jamais être stockés en clair en base de données (hachage bcrypt)
+L'accès aux données doit être strictement limité selon les rôles définis
+▸  Politique de l'entreprise
+L'application doit respecter la charte graphique du Groupe Hammemi (couleurs, logo)
+Toute modification majeure du périmètre doit faire l'objet d'un avenant validé par le maître d'ouvrage
+Le code source livré devient propriété de Comptoirs Hammemi à l'issue du stage
+7. Architecture proposée
+7.1 Architecture générale
+L'application sera développée selon une architecture web client-serveur à trois niveaux (3-tier) :
+Couche présentation (Frontend) : interface utilisateur accessible via navigateur web
+Couche métier (Backend) : serveur d'application gérant la logique métier et exposant une API REST
+Couche données : système de gestion de base de données relationnelle
+Cette architecture garantit la séparation des responsabilités, la maintenabilité du code et la scalabilité future de l'application.
+7.2 Stack technologique
+7.3 Conception de la base de données 		
+Le modèle relationnel de l’application est conçu selon une architecture normalisée permettant la gestion des utilisateurs, des demandes de fournitures, des stocks, des achats, des notifications et des prévisions. Les principales entités et leurs relations sont présentées ci-dessous.
+Relations principales
+Un rôle peut être attribué à plusieurs utilisateurs.
+Un utilisateur appartient à un seul service et possède un seul rôle.
+Un service possède un responsable de service désigné.
+Un utilisateur peut créer plusieurs demandes ; chaque demande est rattachée à son service via service_id et à son validateur via responsable_service_id.
+Une demande contient plusieurs lignes de demande (un article par ligne).
+Chaque acte de validation ou de refus est enregistré dans validations avec un champ etape_validation (1 = Responsable de Service, 2 = Responsable Achats) permettant de tracer les deux niveaux du circuit.
+Un article peut être proposé par plusieurs fournisseurs à des prix différents, géré via la table tarifs.
+Une commande est créée par le Responsable Achats à destination d’un fournisseur unique et décomposée en lignes de commande.
+Chaque mouvement de stock (entrée, sortie, ajustement, perte) est enregistré avec le stock avant et après, garantissant la reconstitution complète de l’historique.
+Les alertes de stock sont générées automatiquement dès que stock_actuel passe sous stock_minimum.
+Un utilisateur reçoit plusieurs notifications liées aux événements du système (validation, refus, livraison, alerte).
+Toutes les actions sensibles (approbation, refus, modification de stock, connexion) sont persistées dans journaux_activite avec horodatage et adresse IP.
+Les prévisions d’achats sont calculées à partir de l’historique des demandes, des commandes et des mouvements de stock sur les 12 derniers mois.
+Les anomalies de consommation détectées par le module IA sont enregistrées par article et par service, avec un niveau de risque.
+Prise en charge des rôles métier
+La base de données prend en charge les cinq rôles du système :
+Les droits d’accès sont gérés via la table roles et appliqués au niveau applicatif selon le modèle RBAC (Role Based Access Control). Un utilisateur ne peut détenir qu’un seul rôle à la fois. Seul l’Administrateur peut modifier le rôle d’un utilisateur.
+Support du module IA
+Le module de prévisions utilise les données historiques des demandes, des commandes et des mouvements de stock afin de :
+prévoir les besoins futurs en fournitures (table previsions_achats) ;
+suggérer des quantités de réapprovisionnement basées sur la tendance de consommation ;
+détecter les anomalies de consommation par service ou par période (table anomalies_consommation) ;
+générer des alertes préventives sur les risques de rupture de stock (table alertes_stock) ;
+calculer un score de priorité pour les achats à effectuer en urgence ;
+tracer la version du modèle IA utilisée pour chaque prévision (modele_ia_version), garantissant l’auditabilité des résultats.
+Cette conception garantit la traçabilité complète des opérations, la sécurité des accès, la gestion avancée des stocks et l’intégration du module d’intelligence artificielle.
+8. Planning et organisation du projet
+8.1 Méthodologie
+La gestion du projet sera conduite selon une approche agile adaptée (Scrum simplifié), avec des sprints de deux semaines permettant des livraisons incrémentales et des ajustements réguliers avec l'encadrant de stage.
+8.2 Phases et jalons
+8.3 Répartition des tâches
+Les deux membres de l'équipe participeront conjointement aux phases d'analyse, de conception et de documentation finale.
+8.4 Outils de gestion de projet
+Versionnage du code : Git / GitHub avec branches par fonctionnalité
+Communication : réunions hebdomadaires avec l'encadrant
+Documentation : Notion ou fichier Markdown dans le dépôt
+9. Livrables du projet
+9.1 Documents
+Cahier des charges (le présent document)
+Dossier de conception (diagrammes UML, maquettes, modèle de données)
+Documentation technique (installation, API, architecture)
+Rapport de stage complet
+9.2 Application
+Code source complet versionné sur dépôt Git
+Application fonctionnelle déployée sur environnement de test
+Scripts de création et d'initialisation de la base de données
+Données de test (jeu de données représentatif)
+9.3 Critères d'acceptation
+L'application sera considérée livrée si les conditions suivantes sont remplies :
+Toutes les fonctionnalités listées dans les spécifications sont implémentées
+Les tests de recette réalisés avec l'encadrant sont concluants
+Aucun bug bloquant ou critique n'est identifié
+La documentation utilisateur est complète et vérifiée
+Le déploiement sur l'environnement de test est opérationnel
+10. Conclusion
+Ce cahier des charges définit de manière exhaustive le cadre, les exigences et les orientations du projet de développement de l'application web de gestion des fournitures bureautiques au sein de Comptoirs Hammemi.
+Le projet répond à un besoin réel et concret de l'entreprise : moderniser une gestion aujourd'hui fragmentée, non traçable et chronophage, en la remplaçant par un système centralisé, intuitif et automatisé. Les bénéfices attendus sont multiples :
+Pour l'équipe de développement, ce projet constitue une expérience de mise en pratique complète du cycle de développement logiciel : de l'analyse des besoins à la livraison d'une solution opérationnelle, en passant par la conception, le développement et les tests.
+La réussite de ce projet repose sur une collaboration étroite et régulière entre la maîtrise d'ouvrage (Comptoirs Hammemi) et la maîtrise d'œuvre (l'équipe de stagiaires), ainsi que sur le respect du périmètre défini dans ce document. Tout écart significatif par rapport aux spécifications devra faire l'objet d'une discussion et d'un accord formel entre les deux parties.
+
+--- TABLES ---
+Table 0:
+Entreprise d'accueil | Comptoirs Hammemi — Groupe Hammemi, Sfax
+Projet | Application Web — Gestion des Fournitures Bureautiques
+Équipe de réalisation | Zainab Msaddak et Yassin Abid
+Version du document | v1.0
+Date de rédaction | 4 juin 2026
+Statut | Document de référence — en attente de validation
+Table 1:
+Comment centraliser, automatiser et fiabiliser la gestion des fournitures bureautiques au sein de Comptoirs Hammemi, afin de réduire les pertes, les ruptures de stock et le temps administratif consacré à ce processus ?
+Table 2:
+Méthode | Description | Utilisateurs concernés
+Registre papier | Un cahier de stock tenu à la main, mis à jour lors des entrées et sorties de fournitures | Gestionnaire de stock
+Tableur Excel | Fichier partagé par clé USB ou email pour suivre les demandes et les niveaux de stock | Responsable des achats
+Demandes verbales / email | Les employés formulent leurs besoins oralement ou par email sans formulaire standardisé | Tous les employés
+Table 3:
+Axe d'amélioration | Situation actuelle | Cible attendue
+Centralisation | Données éparpillées (papier, Excel, email) | Base de données unique, accessible en ligne
+Traçabilité | Aucun journal des actions | Historique complet et horodaté de chaque opération
+Automatisation | Processus entièrement manuels | Workflows automatisés avec notifications
+Visibilité | Aucun tableau de bord | Dashboard en temps réel pour managers et direction
+Contrôle d'accès | Fichiers accessibles à tous | Droits différenciés par profil utilisateur
+Réactivité | Délais de traitement longs | Alertes automatiques et traitement accéléré
+Table 4:
+Réf. | Besoin fonctionnel | Priorité | Acteur concerné
+BF-01 | Permettre aux utilisateurs de s'authentifier de manière sécurisée | Haute | Tous
+BF-02 | Gérer le catalogue des fournitures (ajout, modification, suppression) | Haute | Administrateur
+BF-03 | Suivre les niveaux de stock en temps réel avec alertes de seuil | Haute | Gestionnaire de stock
+BF-04 | Permettre aux employés de soumettre des demandes de fournitures | Haute | Employé
+BF-05 | Implémenter un circuit de validation des demandes | Haute | Resp. service, Gestionnaire
+BF-06 | Gérer les fournisseurs et leurs informations de contact | Moyenne | Administrateur, Resp. achats
+BF-07 | Générer et suivre les bons de commande fournisseurs | Haute | Resp. achats
+BF-08 | Enregistrer tous les mouvements de stock (entrées/sorties) | Haute | Gestionnaire de stock
+BF-09 | Produire des rapports de consommation par période et par service | Moyenne | Direction, Resp. service
+BF-10 | Exporter les documents (rapports, bons de commande) en PDF/Excel | Moyenne | Tous
+BF-11 | Notifier les utilisateurs lors d'événements clés (validation, alerte) | Moyenne | Tous
+BF-12 | Gérer les droits et les rôles des utilisateurs | Haute | Administrateur
+Table 5:
+Rôle | Gestionnaire global du système et de sa configuration
+Responsabilités | Créer et gérer les comptes utilisateurs Configurer les catégories et paramètres globaux Superviser les accès et consulter les journaux d'audit Gérer le catalogue des fournisseurs et des articles
+Droits d'accès | Accès total à tous les modules de l'application
+Nombre estimé | 1 à 2 personnes (DSI ou responsable informatique)
+Table 6:
+Rôle | Valider les demandes de son équipe et gérer les commandes fournisseurs
+Responsabilités | Approuver ou rejeter les demandes soumises par les employés Créer et suivre les bons de commande fournisseurs Consulter les rapports de consommation de son service Recevoir les alertes de stock faible
+Droits d'accès | Demandes (validation), commandes fournisseurs, rapports de son périmètre
+Nombre estimé | 2 à 4 personnes selon l'organigramme
+Table 7:
+Rôle | Administrer les stocks, traiter les demandes approuvées et réceptionner les livraisons
+Responsabilités | Enregistrer les entrées et sorties de stock Traiter les demandes validées (satisfaction ou mise en attente) Gérer les ajustements et inventaires Réceptionner les commandes fournisseurs et mettre le stock à jour
+Droits d'accès | Stocks, mouvements, demandes approuvées, réceptions de commandes
+Nombre estimé | 1 à 2 personnes
+Table 8:
+Rôle | Utilisateur final qui soumet des demandes de fournitures
+Responsabilités | Soumettre des demandes de fournitures via le formulaire en ligne Suivre l'état de ses demandes Consulter les fournitures disponibles dans le catalogue
+Droits d'accès | Formulaire de demande, catalogue (lecture seule), historique de ses propres demandes
+Nombre estimé | Tous les collaborateurs de l'entreprise
+Table 9:
+Couche | Technologie recommandée
+Frontend | React 18 + TypeScript + vite
+Backend | Node.js API Routes / Server Actions
+Base de données | PostgreSQL
+Langage | TypeScript
+Authentification | Auth.ts
+Styling & UI | Tailwind CSS + shadcn/ui
+Hébergement | Vercel
+Versionnage | Git + GitHub
+Table 10:
+Table | Champs principaux | Relations
+roles | id, nom_role, description | 1:N → users
+services | id, nom_service, responsable_id | 1:N → users ; N:1 → users (responsable)
+users | id, nom, prenom, email, mot_de_passe, role_id, service_id, actif, date_creation | N:1 → roles ; N:1 → services
+categories | id, nom, description | 1:N → articles
+articles | id, reference, designation, categorie_id, stock_actuel, stock_minimum, stock_maximum, prix_unitaire, emplacement | N:1 → categories ; N:N → fournisseurs (via tarifs)
+fournisseurs | id, nom, contact, email, telephone, adresse | N:N → articles (via tarifs) ; 1:N → commandes
+tarifs | id, article_id, fournisseur_id, prix, delai_livraison, date_debut, date_fin | N:1 → articles ; N:1 → fournisseurs
+demandes | id, numero, demandeur_id, service_id, responsable_service_id, statut, priorite | N:1 → users ; N:1 → services ; 1:N → lignes_demande
+lignes_demande | id, demande_id, article_id, quantite_demandee, quantite_accordee | N:1 → demandes ; N:1 → articles
+validations | id, demande_id, responsable_id, etape_validation, decision, commentaire | N:1 → demandes ; N:1 → users
+commandes | id, numero, fournisseur_id, responsable_achat_id, statut, date_livraison_prevue | N:1 → fournisseurs ; N:1 → users ; 1:N → lignes_commande
+lignes_commande | id, commande_id, article_id, quantite_commandee, quantite_recue, prix_unitaire | N:1 → commandes ; N:1 → articles
+mouvements_stock | id, article_id, utilisateur_id, type_mouvement, quantite, stock_avant, stock_apres, motif | N:1 → articles ; N:1 → users
+inventaires | id, article_id, utilisateur_id, stock_theorique, stock_reel, ecart (calculé) | N:1 → articles ; N:1 → users
+alertes_stock | id, article_id, seuil, quantite_actuelle, statut | N:1 → articles
+notifications | id, utilisateur_id, titre, message, lu, date_notification | N:1 → users
+journaux_activite | id, utilisateur_id, action, description, adresse_ip, date_action | N:1 → users
+previsions_achats | id, article_id, mois_prevision, quantite_prevue, quantite_recommandee, score_priorite, modele_ia_version | N:1 → articles
+anomalies_consommation | id, article_id, service_id, description, niveau_risque, date_detection | N:1 → articles ; N:1 → services
+Table 11:
+Rôle | Tables principales utilisées
+Administrateur | utilisateurs, roles, journaux_activite
+Responsable de Service | validations, demandes, notifications
+Gestionnaire de Stock | articles, mouvements_stock, alertes_stock
+Responsable Achats | commandes, previsions_achats, anomalies_consommation
+Employé | demandes, lignes_demande, notifications
+Table 12:
+Phase | Activités | Durée estimée | Livrable
+Phase 1 — Analyse | Recueil des besoins, étude de l'existant, rédaction du CDC | 4 jours | Cahier des charges validé
+Phase 2 — Conception | Modélisation BDD, maquettes UI, architecture technique | 4 jours | Dossier de conception
+Phase 3 — Sprint 1 | Auth, gestion utilisateurs, catalogue (CRUD) | 4 jours | Module articles opérationnel
+Phase 4 — Sprint 2 | CRUD Produits + Catégories + Upload photos | 4 jours | Module stocks opérationnel
+Phase 5 — Sprint 2 | Tests + Revue de Sprint + Retrospective | 4 jours | Module demandes opérationnel
+Phase 6 — Sprint 2 | Intégration Stock avec Achats et Ventes | 4 jours | Module commandes + rapports
+Phase 7 — Finalisation | Tests, corrections, déploiement, documentation | 4 jours | Application livrée
+Table 13:
+Développeur | Responsabilités principales
+Développeur | Développement complet de l’application (frontend, backend, base de données, fonctionnalités)
+Analyste | Analyse des besoins, modélisation des données, conception des rapports, Power BI, tableaux de bord, documentation
+Table 14:
+Bénéfice | Impact attendu | Indicateur de mesure
+Réduction des ruptures de stock | Alertes automatiques et suggestions de réapprovisionnement | Nombre de ruptures constatées / mois
+Gain de temps administratif | Suppression des tâches manuelles de saisie et de consolidation | Heures épargnées par semaine
+Meilleure traçabilité | Chaque action est enregistrée avec auteur, date et motif | 100% des mouvements tracés
+Fluidification des demandes | Workflow numérique avec notifications et délais encadrés | Délai moyen de traitement d'une demande
+Aide à la décision | Rapports et tableaux de bord disponibles en temps réel | Fréquence d'utilisation des rapports
+Table 15:
+Document rédigé par | L'équipe de développement (stagiaires)
+Validé par | Encadrant Comptoirs Hammemi (à signer)
+Version | 1.0 — Document de référence
+Date | 8 juin 2026

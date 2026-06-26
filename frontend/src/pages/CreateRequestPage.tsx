@@ -121,7 +121,7 @@ export const CreateRequestPage: React.FC = () => {
 
   const articleOptions = [
     { value: '', label: 'Sélectionner un article' },
-    ...articles.map(a => ({ value: a.id.toString(), label: `${a.name} - €${(a.unitPrice || 0).toFixed(2)}` }))
+    ...articles.map(a => ({ value: a.id.toString(), label: `${a.name} - ${(a.unitPrice || 0).toFixed(2)} TND` }))
   ];
 
   return (
@@ -237,7 +237,7 @@ export const CreateRequestPage: React.FC = () => {
                       <p className="font-medium text-neutral-900">{item.articleName}</p>
                       <div className="flex items-center gap-4 mt-1 text-sm text-neutral-600">
                         <span>Qté : {item.quantity}</span>
-                        <span>Coût Est. : €{item.estimatedCost.toFixed(2)}</span>
+                        <span>Coût Est. : {item.estimatedCost.toFixed(2)} TND</span>
                         {item.notes && <span className="italic">{item.notes}</span>}
                       </div>
                     </div>
@@ -255,7 +255,7 @@ export const CreateRequestPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-neutral-900">Coût Estimé Total :</span>
                   <span className="text-2xl font-bold text-primary-600">
-                    €{totalEstimatedCost.toFixed(2)}
+                    {totalEstimatedCost.toFixed(2)} TND
                   </span>
                 </div>
               </div>

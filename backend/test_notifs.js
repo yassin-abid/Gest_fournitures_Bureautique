@@ -1,0 +1,1 @@
+﻿const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function test() { console.log(await prisma.user.findMany({ where: { OR: [ { role: { name: 'admin' } }, { role: { name: 'responsable_service' } } ] }, include: { role: true } })); } test();

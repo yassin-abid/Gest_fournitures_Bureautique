@@ -91,6 +91,26 @@ export const requestsService = {
       include: { requester: true, items: { include: { article: true } } },
     });
 
+    // Notify Admins and Manager
+    const targetUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { role: { name: 'admin' } },
+          { role: { name: 'responsable_service' }, serviceId }
+        ]
+      }
+    });
+
+    if (targetUsers.length > 0) {
+      await prisma.notification.createMany({
+        data: targetUsers.map(u => ({
+          userId: u.id,
+          title: 'Nouvelle demande de fournitures',
+          message: `La demande ${requestNumber} a été soumise par ${user.firstName} ${user.lastName}.`,
+        }))
+      });
+    }
+
     return this.getById(req.id);
   },
 

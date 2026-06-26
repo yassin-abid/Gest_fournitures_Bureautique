@@ -180,7 +180,7 @@ export const ArticlesPage: React.FC = () => {
       key: 'unitPrice' as const,
       label: 'Prix Unitaire',
       sortable: true,
-      render: (value: number) => `€${(value || 0).toFixed(2)}`,
+      render: (value: number) => `${(value || 0).toFixed(2)} TND`,
     },
     {
       key: 'quantity' as const,

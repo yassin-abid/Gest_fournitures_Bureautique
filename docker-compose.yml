@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fournitures_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fournitures_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fournitures_backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      # Override the DB URL from .env to use the local docker db instead of Render
+      - DATABASE_URL=postgresql://postgres:password@db:5432/fournitures_db?schema=public
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    restart: unless-stopped
+    command: sh -c "npx prisma db push --accept-data-loss && npm run seed && npm run dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fournitures_frontend
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
