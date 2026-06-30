@@ -270,6 +270,12 @@ export const requestsService = {
   },
 
   async delete(id: number) {
+    // Unlink orders to avoid foreign key constraint violations
+    await prisma.order.updateMany({
+      where: { requestId: id },
+      data: { requestId: null },
+    });
+
     // Delete related records first
     await prisma.validation.deleteMany({ where: { requestId: id } });
     await prisma.requestItem.deleteMany({ where: { requestId: id } });
