@@ -33,13 +33,22 @@ export const audit = (action: string, entityType: string) => {
     }
 
     const originalJson = res.json.bind(res);
+    const originalSend = res.send.bind(res);
 
-    res.json = (body: any) => {
+    const logAudit = (body?: any) => {
+      if (res.locals.audited) return; // Prevent double logging if both are called
+      res.locals.audited = true;
+
       // Log after response
       if (req.user && res.statusCode < 400) {
+        let parsedBody = body;
+        if (typeof body === 'string') {
+          try { parsedBody = JSON.parse(body); } catch (e) {}
+        }
+
         const entityIdStr =
           req.params.id ||
-          (body && body.id) ? String(req.params.id || (body && body.id)) : 'unknown';
+          (parsedBody && parsedBody.id) ? String(req.params.id || (parsedBody && parsedBody.id)) : 'unknown';
 
         // Async logging to avoid blocking response
         (async () => {
@@ -73,7 +82,16 @@ export const audit = (action: string, entityType: string) => {
           }
         })();
       }
+    };
+
+    res.json = (body: any) => {
+      logAudit(body);
       return originalJson(body);
+    };
+
+    res.send = (body?: any) => {
+      logAudit(body);
+      return originalSend(body);
     };
 
     next();
